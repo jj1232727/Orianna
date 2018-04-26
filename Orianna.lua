@@ -5,7 +5,7 @@ require "DamageLib"
 require "MapPosition"
 local ball_name = ""
 local ball_pos = ""
-local AIOIcon = "https://raw.githubusercontent.com/Kypos/GOS-External/master/misc/AIOIcon.png"
+local AIOIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
 
 
 
@@ -274,16 +274,14 @@ function Orianna:LoadMenu()
     AIO.Drawings.Q:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})
 	--E
 	AIO.Drawings:MenuElement({id = "E", name = "Draw E range", type = MENU})
-	AIO.Drawings:MenuElement({id = "DrawDamage", name = "Draw damage on HPbar", value = true})
     AIO.Drawings.E:MenuElement({id = "Enabled", name = "Enabled", value = true})       
     AIO.Drawings.E:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
     AIO.Drawings.E:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})	
 	
 	--Ball
-	AIO.Drawings:MenuElement({id = "B", name = "Draw R Range on Ball", type = MENU})
-    AIO.Drawings.B:MenuElement({id = "Enabled", name = "Enabled", value = true})       
-    AIO.Drawings.B:MenuElement({id = "Width", name = "Width", value = 5, min = 1, max = 5, step = 1})
-    AIO.Drawings.B:MenuElement({id = "Color", name = "Color", color = Draw.Color(255, 255, 87, 51)})
+	AIO.Drawings:MenuElement({id = "ballDraw", name = "Draw W and R on ball", type = MENU})
+    AIO.Drawings.ballDraw:MenuElement({id = "BallR", name = "Q Enabled", value = true})       
+    AIO.Drawings.ballDraw:MenuElement({id = "BallW", name = "W Enabled", value = true}) 
 	
 	
 	AIO:MenuElement({id = "CustomSpellCast", name = "Use custom spellcast",value = true})
@@ -324,6 +322,7 @@ function Orianna:Tick()
 	if AIO.Combo.comboActive:Value() then
 		--self:Combo()
 		self:OriQ()
+		self:KillstealR()
 		self:ComboW()
 		self:EThroughTarget()
 	end
@@ -335,6 +334,7 @@ function Orianna:Tick()
 	if AIO.Clear.clearActive:Value() then
 		self:Clear()
 		self:ClearW()
+		self:ClearJungle()
 	end
 	if AIO.Lasthit.lasthitActive:Value() then
 		self:Lasthit()
@@ -343,7 +343,7 @@ function Orianna:Tick()
 		self:RKey()
 	end		
 	if AIO.dashing.AutoE:Value() then
-		self:AutoEDashingAllys()
+		self:eMovingAlly()
 	end		
 		
 		
@@ -378,21 +378,22 @@ function Orianna:Tick()
 	end
 
 function Orianna:Draw()
-	if HasBuff(myHero, "orianaghostself") == false then
-		Draw.Circle(ball_pos, 175, AIO.Drawings.B.Width:Value(), AIO.Drawings.B.Color:Value()) end
-	if HasBuff(myHero, "orianaghostself") == false and Ready(_R) == true then
-		Draw.Circle(ball_pos, 325, AIO.Drawings.B.Width:Value(), AIO.Drawings.Q.Color:Value()) end
+	if HasBuff(myHero, "orianaghostself") == false and Ready(_W) and AIO.Drawings.ballDraw.BallR:Value()then
+		--print(AIO.Drawings.ballDraw.BallR.Value())
+		Draw.Circle(ball_pos, 250, 5, Draw.Color(200, 255, 87, 51)) end
+	if HasBuff(myHero, "orianaghostself") == false and Ready(_R) == true and AIO.Drawings.ballDraw.BallW:Value()then
+		Draw.Circle(ball_pos, 325, 5, Draw.Color(200, 255, 87, 51)) end
 	
 if Ready(_Q) and AIO.Drawings.Q.Enabled:Value() then Draw.Circle(myHero.pos, Q.Range, AIO.Drawings.Q.Width:Value(), AIO.Drawings.Q.Color:Value()) end
 if Ready(_E) and AIO.Drawings.E.Enabled:Value() then Draw.Circle(myHero.pos, E.Range, AIO.Drawings.E.Width:Value(), AIO.Drawings.E.Color:Value()) end
-if AIO.Drawings.B.Enabled:Value() and Ready(_R) and not HasBuff(myHero, "orianaghostself") then 
+if AIO.Drawings.ballDraw.BallR:Value() and Ready(_R) and not HasBuff(myHero, "orianaghostself") then 
 
-	else if AIO.Drawings.B.Enabled:Value() and Ready(_R) and HasBuff(myHero, "orianaghostself") then
-	Draw.Circle(myHero.pos, 400, AIO.Drawings.B.Width:Value(), AIO.Drawings.B.Color:Value())
+	else if AIO.Drawings.ballDraw.BallR:Value() and Ready(_R) and HasBuff(myHero, "orianaghostself") then
+	--raw.Circle(myHero.pos, 400, 5, Draw.Color(200, 255, 255, 255))
 	
 	end 
 end
-			if AIO.Drawings.DrawDamage:Value() then
+			
 		for i, hero in pairs(GetEnemyHeroes()) do
 			local barPos = hero.hpBar
 			if not hero.dead and hero.pos2D.onScreen and barPos.onScreen and hero.visible then
@@ -411,7 +412,7 @@ end
 				end
 				end
 				end
-				end
+				
 		  if Ready(_Q) then
 			local target = CurrentTarget(Q.Range)
 			if target == nil then return end
@@ -452,7 +453,6 @@ function Orianna:OriQ()
     if target == nil then return end
 	
 	if AIO.Combo.UseQ:Value() and target and Ready(_Q) then
-		print("bish")
 	
 		local hitRate, aimPosition = HPred:GetUnreliableTarget(myHero.pos, Q.Range, Q.Delay, Q.Speed, Q.Width, Q.Collision, 1,nil)	
 		if hitRate and HPred:IsInRange(myHero.pos, aimPosition, Q.Range) then
@@ -539,6 +539,20 @@ function Orianna:Clear()
 		end
 	end
 end
+end
+
+function Orianna:ClearJungle()
+	local minionlist = {}
+	
+			for i = 1, Game.MinionCount() do
+				local minion = Game.Minion(i)
+				if minion.valid and minion.isEnemy and minion.pos:DistanceTo(myHero.pos) < 825 and Ready(_Q) then
+					Control.CastSpell(HK_Q,minion.pos)
+				end
+				if minion.valid and minion.isEnemy and minion.pos:DistanceTo(ball_pos) < 250 and Ready(_W) then
+					Control.CastSpell(HK_W)
+			end
+				end
 end
 
 function Orianna:ClearW()
@@ -649,18 +663,9 @@ function Orianna:EnemiesNearAlly(pos,range)
 	return N	
 end
 
-function Orianna:EnemiesNearBall(pos,range)
-	local N = 0
-	for i = 1,Game.HeroCount()  do
-		local hero = Game.Hero(i)	
-		if ValidTarget(hero,range + hero.boundingRadius) and hero.isAlly and not hero.dead then
-			N = N + 1
-		end
-	end
-	return N	
-end
 
-function Orianna:AutoultMe() --work
+
+function Orianna:AutoultMe() 
 
 if AIO.Misc.UseR:Value() and Ready(_R)then
 	local Rdamage = Orianna:RDMG()
@@ -723,7 +728,7 @@ end
 end
 end
 
-function Orianna:GetDashingHeroes()
+function Orianna:getWombos()
 	self.DashingHeroes = {}
 	for i = 1, Game.HeroCount() do
 		local Hero = Game.Hero(i)
@@ -734,12 +739,12 @@ function Orianna:GetDashingHeroes()
 	return self.DashingHeroes
 end
 
-function Orianna:AutoEDashingAllys()
+function Orianna:eMovingAlly()
 	for i = 1, Game.HeroCount() do
 		local hero = Game.Hero(i)
 		if hero.isAlly then
 		if hero.pathing.hasMovePath and hero.pathing.isDashing and hero.pathing.dashSpeed > 500 then 
-				for i, allyHero in pairs(self:GetDashingHeroes()) do 
+				for i, allyHero in pairs(self:getWombos()) do 
 					if myHero.pos:DistanceTo(hero.pos) < 1100 and Ready(_E) then 
 							Control.CastSpell(HK_E,hero.pos)
 						end
@@ -876,82 +881,13 @@ function HPred:Tick()
 	
 end
 
-function HPred:GetEnemyNexusPosition()
-	--This is slightly wrong. It represents fountain not the nexus. Fix later.
-	if myHero.team == 100 then return Vector(14340, 171.977722167969, 14390); else return Vector(396,182.132507324219,462); end
-end
 
 
-function HPred:GetReliableTarget(source, range, delay, speed, radius, timingAccuracy, checkCollision)
-	--TODO: Target whitelist. This will target anyone which is definitely not what we want
-	--For now we can handle in the champ script. That will cause issues with multiple people in range who are goood targets though.
-	
-	
-	--Get hourglass enemies
-	target, aimPosition =self:GetHourglassTarget(source, range, delay, speed, timingAccuracy, checkCollision, radius)
-	if target and aimPosition then
-		return target, aimPosition
-	end
-	
-	--Get reviving target
-	target, aimPosition =self:GetRevivingTarget(source, range, delay, speed, timingAccuracy, checkCollision, radius)
-	if target and aimPosition then
-		return target, aimPosition
-	end
-	
-	--Get channeling enemies
-	target, aimPosition =self:GetChannelingTarget(source, range, delay, speed, timingAccuracy, checkCollision, radius)
-		if target and aimPosition then
-		return target, aimPosition
-	end
-	
-	--Get teleporting enemies
-	target, aimPosition =self:GetTeleportingTarget(source, range, delay, speed, timingAccuracy, checkCollision, radius)	
-	if target and aimPosition then
-		return target, aimPosition
-	end
-	
-	--Get instant dash enemies
-	target, aimPosition =self:GetInstantDashTarget(source, range, delay, speed, timingAccuracy, checkCollision, radius)
-	if target and aimPosition then
-		return target, aimPosition
-	end	
-	
-	--Get dashing enemies
-	target, aimPosition =self:GetDashingTarget(source, range, delay, speed, timingAccuracy, checkCollision, radius, midDash)
-	if target and aimPosition then
-		return target, aimPosition
-	end
-	
-	--Get stunned enemies
-	local target, aimPosition =self:GetImmobileTarget(source, range, delay, speed, timingAccuracy, checkCollision, radius)
-	if target and aimPosition then
-		return target, aimPosition
-	end
-	
-	--Get blink targets
-	--target, aimPosition =self:GetBlinkTarget(source, range, speed, delay, checkCollision, radius)
-	--if target and aimPosition then
-	--	return target, aimPosition
-	--end	
-end
 
---Will return how many allies or enemies will be hit by a linear spell based on current waypoint data.
-function HPred:GetLineTargetCount(source, aimPos, delay, speed, width, targetAllies)
-	local targetCount = 0
-	for i = 1, Game.HeroCount() do
-		local t = Game.Hero(i)
-		if self:CanTargetALL(t) and ( targetAllies or t.isEnemy) then
-			local predictedPos = self:PredictUnitPosition(t, delay+ self:GetDistance(source, t.pos) / speed)
-			local proj1, pointLine, isOnSegment = self:VectorPointProjectionOnLineSegment(source, aimPos, predictedPos)
-			if proj1 and isOnSegment and (self:GetDistanceSqr(predictedPos, proj1) <= (t.boundingRadius + width) ^ 2) then
-				targetCount = targetCount + 1
-			end
-		end
-	end
-	return targetCount
-end
 
+
+
+-- Thank you Sikaka Amazing HPred Logic
 --Will return the valid target who has the highest hit chance and meets all conditions (minHitChance, whitelist check, etc)
 function HPred:GetUnreliableTarget(source, range, delay, speed, radius, checkCollision, minimumHitChance, whitelist)
 	local _validTargets = {}
