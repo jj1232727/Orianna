@@ -5,7 +5,7 @@ require "DamageLib"
 require "MapPosition"
 local ball_name = ""
 local ball_pos = ""
-local AIOIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga2.png"
+local AIOIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
 
 
 
@@ -229,7 +229,7 @@ function Orianna:LoadSpells()
 end
 
 function Orianna:LoadMenu()
-	AIO = MenuElement({type = MENU, id = "Orianna", name = "Saga's AIO Orianna", leftIcon = AIOIcon})
+	AIO = MenuElement({type = MENU, id = "Orianna", name = "Saga's AIO Orianna", icon = AIOIcon})
 	AIO:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	AIO.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
 	AIO.Combo:MenuElement({id = "UseW", name = "W", value = true})
