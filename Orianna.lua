@@ -33,13 +33,13 @@ hkitems = { [ITEM_1] = HK_ITEM_1, [ITEM_2] = HK_ITEM_2, [ITEM_3] = HK_ITEM_3, [I
 if FileExist(COMMON_PATH .. "TPred.lua") then
 	require 'TPred'
 	PrintChat("TPred library loaded")
+elseif FileExist(COMMON_PATH .. "HPred.lua") then
+	require 'HPred'
 elseif FileExist(COMMON_PATH .. "Collision.lua") then
 	require 'Collision'
 	PrintChat("Collision library loaded")
 end
-if FileExist(COMMON_PATH .. "HPred.lua") then
-	require 'HPred'
-end
+
 
 
 
@@ -284,6 +284,11 @@ function Orianna:LoadMenu()
     AIO.Drawings.ballDraw:MenuElement({id = "BallW", name = "W Enabled", value = true}) 
 	
 	
+	AIO:MenuElement({id = "Prediction", name = "Prediction", type = MENU})
+	AIO.Prediction:MenuElement({id = "TPred", name = "Use TPred", value = true})
+	AIO.Prediction:MenuElement({id = "Nothing", type = SPACE, name = "On for Tpred off for Hpred"})
+	
+	
 	AIO:MenuElement({id = "CustomSpellCast", name = "Use custom spellcast",value = true})
 	AIO:MenuElement({id = "delay", name = "Custom spellcast delay", value = 100, min = 0, max = 200, step = 5,tooltip = "Increase if spells are inaccurate", identifier = ""})
 	
@@ -317,17 +322,23 @@ function Orianna:Tick()
 		self:AutoultMe()
 		self:Autoult1Ally()
 		self:AutoultBall()
-		self:Ball()
+		DelayAction(function() self:Ball() end , 0.70)
         if myHero.dead or Game.IsChatOpen() == true or IsRecalling() == true or ExtLibEvade and ExtLibEvade.Evading == true then return end
 	if AIO.Combo.comboActive:Value() then
-		--self:Combo()
-		self:OriQ()
+	if AIO.Prediction.TPred:Value() then
+		self:Combo()
+	else
+		self:OriQ() end
+		
 		self:KillstealR()
 		self:ComboW()
 		self:EThroughTarget()
 	end
 	if AIO.Harass.harassActive:Value() then
+		if AIO.Prediction.TPred:Value() then
 		self:Harass()
+	else
+		self:OriQH() end
 		self:HarassW()
 		self:EThroughTarget()
 	end
@@ -349,16 +360,19 @@ function Orianna:Tick()
 		
 	
 	end
+	
+	local clock = os.clock
+
 
 	function Orianna:Ball()
-		for i = 1, Game.ObjectCount() do 
+		for i = 1, Game.ObjectCount() do
 			local object = Game.Object(i)
-			if object then
-				if string.find(object.name,"ball")then
+			
+			if object and string.find(object.name,"ball") then
 				ball_name = object.name
 				ball_pos = object.pos
 				
-				end
+				
 				end
 		
 		end	
@@ -379,7 +393,6 @@ function Orianna:Tick()
 
 function Orianna:Draw()
 	if HasBuff(myHero, "orianaghostself") == false and Ready(_W) and AIO.Drawings.ballDraw.BallR:Value()then
-		--print(AIO.Drawings.ballDraw.BallR.Value())
 		Draw.Circle(ball_pos, 250, 5, Draw.Color(200, 255, 87, 51)) end
 	if HasBuff(myHero, "orianaghostself") == false and Ready(_R) == true and AIO.Drawings.ballDraw.BallW:Value()then
 		Draw.Circle(ball_pos, 325, 5, Draw.Color(200, 255, 87, 51)) end
@@ -453,6 +466,19 @@ function Orianna:OriQ()
     if target == nil then return end
 	
 	if AIO.Combo.UseQ:Value() and target and Ready(_Q) then
+	
+		local hitRate, aimPosition = HPred:GetUnreliableTarget(myHero.pos, Q.Range, Q.Delay, Q.Speed, Q.Width, Q.Collision, 1,nil)	
+		if hitRate and HPred:IsInRange(myHero.pos, aimPosition, Q.Range) then
+			Control.CastSpell(HK_Q, aimPosition)
+		end	
+	end
+end
+
+function Orianna:OriQH()
+	target = CurrentTarget(Q.Range)
+    if target == nil then return end
+	
+	if AIO.Harass.UseQ:Value() and target and Ready(_Q) then
 	
 		local hitRate, aimPosition = HPred:GetUnreliableTarget(myHero.pos, Q.Range, Q.Delay, Q.Speed, Q.Width, Q.Collision, 1,nil)	
 		if hitRate and HPred:IsInRange(myHero.pos, aimPosition, Q.Range) then
