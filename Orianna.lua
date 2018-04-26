@@ -5,7 +5,7 @@ require "DamageLib"
 require "MapPosition"
 local ball_name = ""
 local ball_pos = ""
-local AIOIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
+local AIOIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga2.png"
 
 
 
