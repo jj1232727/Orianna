@@ -222,9 +222,9 @@ class "Orianna"
 function Orianna:LoadSpells()
 
 	Q = {Range = 825, Width = 40, Delay = 0.40, Speed = 1200, Collision = false, aoe = false, Type = "circular"}
-	W = {Delay = 0.10, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 250}
+	W = {Delay = 0.10, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 240}
 	E = {Range = 1100, Width = 40, Delay = 0.35, Speed = 1200, Collision = false, aoe = false, Type = "line"}
-	R = {Delay = 0.35, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 325}
+	R = {Delay = 0.35, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 310}
 
 end
 
@@ -320,7 +320,7 @@ end
 function Orianna:WndMsg(msg, param)
 		
         if msg == 257 then
-		
+			
             local ping, delay = Game.Latency() / 1000 , nil
             if param == HK_Q then
                 delay = Q.Delay + ping
@@ -334,30 +334,31 @@ function Orianna:WndMsg(msg, param)
     end
 
 function Orianna:Tick()
-		self:KillstealR()
+	
+
+		--self:KillstealR()
 		
-		self:AutoultMe()
-		self:Autoult1Ally()
-		self:AutoultBall()
+		--self:AutoultMe()
+		--self:Autoult1Ally()
+		--self:AutoultBall()
 		--DelayAction(function() self:Ball() end , 0.70)
         if myHero.dead or Game.IsChatOpen() == true or IsRecalling() == true or ExtLibEvade and ExtLibEvade.Evading == true then return end
 	if AIO.Combo.comboActive:Value() then
-	if AIO.Prediction.TPred:Value() then
-		self:Combo()
-	else
-		self:OriQ() end
-		
+		self:OriQ()
 		self:KillstealR()
+		self:AutoultMe()
+		self:Autoult1Ally()
+		self:AutoultBall()
 		self:ComboW()
-		self:EThroughTarget()
+		if Ready(_W) == false or  CurrentTarget(300)then
+		self:EThroughTarget() end
 	end
 	if AIO.Harass.harassActive:Value() then
-		if AIO.Prediction.TPred:Value() then
+		AIO.Prediction.TPred:Value()
 		self:Harass()
-	else
-		self:OriQH() end
+		self:OriQH()
 		self:HarassW()
-		self:EThroughTarget()
+		--self:EThroughTarget()
 	end
 	if AIO.Clear.clearActive:Value() then
 		self:Clear()
@@ -383,7 +384,7 @@ function Orianna:Tick()
 
 	
 	function Orianna:Ball()
-		for i = 1, Game.ObjectCount() do
+		--[[for i = 1, Game.ObjectCount() do
 			local object = Game.Object(i)
 			
 			if object and string.find(object.name,"ball") then
@@ -393,7 +394,7 @@ function Orianna:Tick()
 				
 				end
 		
-		end	
+		end	]]--
 		
 		if HasBuff(myHero, "orianaghostself") then 
 			ball = ball_name
@@ -409,10 +410,10 @@ function Orianna:Tick()
 	end
 
 function Orianna:Draw()
-	if HasBuff(myHero, "orianaghostself") == false and Ready(_W) and AIO.Drawings.ballDraw.BallR:Value()then
-		Draw.Circle(ball_pos, 250, 5, Draw.Color(200, 255, 87, 51)) end
-	if HasBuff(myHero, "orianaghostself") == false and Ready(_R) == true and AIO.Drawings.ballDraw.BallW:Value()then
-		Draw.Circle(ball_pos, 325, 5, Draw.Color(200, 255, 87, 51)) end
+	if HasBuff(myHero, "orianaghostself") == false and AIO.Drawings.ballDraw.BallR:Value()then
+		Draw.Circle(ball_pos, 240, 5, Draw.Color(200, 255, 87, 51)) end
+	if HasBuff(myHero, "orianaghostself") == false and AIO.Drawings.ballDraw.BallW:Value()then
+		Draw.Circle(ball_pos, 310, 5, Draw.Color(200, 255, 87, 51)) end
 	
 if Ready(_Q) and AIO.Drawings.Q.Enabled:Value() then Draw.Circle(myHero.pos, Q.Range, AIO.Drawings.Q.Width:Value(), AIO.Drawings.Q.Color:Value()) end
 if Ready(_E) and AIO.Drawings.E.Enabled:Value() then Draw.Circle(myHero.pos, E.Range, AIO.Drawings.E.Width:Value(), AIO.Drawings.E.Color:Value()) end
@@ -474,6 +475,7 @@ function Orianna:Combo()
 		    local castpos,HitChance, pos = TPred:GetBestCastPosition(target, Q.Delay , Q.Width, Q.Range, Q.Speed, myHero.pos, Q.ignorecol, Q.Type )
 		    if (HitChance > 0 ) then
 				Control.CastSpell(HK_Q, castpos)
+				ball_pos = castpos
 			end
 		    end
 	    end
@@ -487,6 +489,7 @@ function Orianna:OriQ()
 		local hitRate, aimPosition = HPred:GetUnreliableTarget(myHero.pos, Q.Range, Q.Delay, Q.Speed, Q.Width, Q.Collision, 1,nil)	
 		if hitRate and HPred:IsInRange(myHero.pos, aimPosition, Q.Range) then
 			Control.CastSpell(HK_Q, aimPosition)
+			ball_pos = aimPosition
 		end	
 	end
 end
@@ -500,6 +503,7 @@ function Orianna:OriQH()
 		local hitRate, aimPosition = HPred:GetUnreliableTarget(myHero.pos, Q.Range, Q.Delay, Q.Speed, Q.Width, Q.Collision, 1,nil)	
 		if hitRate and HPred:IsInRange(myHero.pos, aimPosition, Q.Range) then
 			Control.CastSpell(HK_Q, aimPosition)
+			ball_pos = aimPosition
 		end	
 	end
 end
@@ -512,6 +516,7 @@ function Orianna:Harass()
 		    local castpos,HitChance, pos = TPred:GetBestCastPosition(target, Q.Delay , Q.Width, Q.Range, Q.Speed, myHero.pos, Q.ignorecol, Q.Type )
 		    if (HitChance > 0 ) then
 				Control.CastSpell(HK_Q, castpos)
+				ball_pos = castpos
 			end
 		    end
 	    end
@@ -521,7 +526,7 @@ function Orianna:HarassW()
     local target = CurrentTarget(1300)
     if target == nil then return end
     if AIO.Combo.UseW:Value() and target and Ready(_W) then
-			if ball_pos and target.pos:DistanceTo(ball_pos) <= 250 then
+			if ball_pos and target.pos:DistanceTo(ball_pos) <= 240 then
 				Control.CastSpell(HK_W)
 			end
 			end
@@ -531,7 +536,7 @@ function Orianna:ComboW()
 	local target = CurrentTarget(1300)
     if target == nil then return end
     if AIO.Combo.UseW:Value() and target and Ready(_W) then
-			if ball_pos and target.pos:DistanceTo(ball_pos) <= 250 then
+			if ball_pos and target.pos:DistanceTo(ball_pos) <= 240 then
 				Control.CastSpell(HK_W)
 			end
 			end
@@ -542,7 +547,7 @@ function Orianna:BallMe()
 	local target = CurrentTarget(300)
     if target == nil then return end
     if AIO.Combo.UseW:Value() and target and Ready(_W) then
-			if myHero.pos:DistanceTo(target.pos) <= 250 then
+			if myHero.pos:DistanceTo(target.pos) <= 240 then
 				Control.CastSpell(HK_W)
 			end
 		    end
@@ -554,6 +559,7 @@ function Orianna:EThroughTarget()
 	local lineSegment1 = gsoClosestPointOnLineSegment(target.pos, myHero.pos,ball_pos)
 	if AIO.Combo.UseE:Value() and Ready(_E) and lineSegment1 and HasBuff(myHero, "orianaghostself") == false then 
 	Control.CastSpell(HK_E, myHero)
+	
 	end
 end
 			
@@ -575,10 +581,11 @@ function Orianna:Clear()
 				qMinions[#qMinions+1] = minion
 			end	
 	end	
-		local BestPos, BestHit = GetBestCircularFarmPosition(825, 250, qMinions)
+		local BestPos, BestHit = GetBestCircularFarmPosition(825, 240, qMinions)
 		if BestHit >= AIO.Clear.QCount:Value() and AIO.Clear.UseQ:Value() then
-			Control.CastSpell(HK_Q,BestPos)
 			
+			Control.CastSpell(HK_Q,BestPos)
+			ball_pos = BestPos
 		end
 	end
 end
@@ -591,8 +598,9 @@ function Orianna:ClearJungle()
 				local minion = Game.Minion(i)
 				if minion.valid and minion.isEnemy and minion.pos:DistanceTo(myHero.pos) < 825 and Ready(_Q) then
 					Control.CastSpell(HK_Q,minion.pos)
+					ball_pos = minion.pos
 				end
-				if minion.valid and minion.isEnemy and minion.pos:DistanceTo(ball_pos) < 250 and Ready(_W) then
+				if minion.valid and minion.isEnemy and minion.pos:DistanceTo(ball_pos) < 240 and Ready(_W) then
 					Control.CastSpell(HK_W)
 			end
 				end
@@ -612,9 +620,9 @@ function Orianna:ClearW()
 				qMinions[#qMinions+1] = minion
 			end	
 	end	
-		local BestPos, BestHit = GetBestCircularFarmPosition(825, 250, qMinions)
+		local BestPos, BestHit = GetBestCircularFarmPosition(825, 240, qMinions)
 		if BestHit >= AIO.Clear.QCount:Value() and AIO.Clear.UseQ:Value() then
-			Control.CastSpell(HK_W,BestPos)
+			Control.CastSpell(HK_W)
 			
 		end
 	end
@@ -628,7 +636,8 @@ function Orianna:Lasthit()
 			local Qdamage = Orianna:QDMG()
 			if myHero.pos:DistanceTo(minion.pos) < 825 and AIO.Lasthit.UseQ:Value() and minion.isEnemy and not minion.dead then
 				if Qdamage >= HpPred(minion,1) then
-			    CastSpell(HK_Q,minion)
+			    Control.CastSpell(HK_Q,minion)
+				ball_pos = minion
 				end
 			end
 		end
@@ -661,13 +670,13 @@ function Orianna:KillstealR()
 	if AIO.Killsteal.RR["UseR"..target.charName]:Value() and Ready(_R) and target then
 		   	local Rdamage = Orianna:RDMG()
 			if Rdamage >= HpPred(target,1) + target.hpRegen * 2 then
-			if myHero.pos:DistanceTo(target.pos) < 325 and HasBuff(myHero, "orianaghostself") then
+			if myHero.pos:DistanceTo(target.pos) < 310 and HasBuff(myHero, "orianaghostself") then
 			    Control.CastSpell(HK_R)
-			else if ball_pos and target.pos:DistanceTo(ball_pos) < 325 then
+			else if ball_pos and target.pos:DistanceTo(ball_pos) < 310 then
 				Control.CastSpell(HK_R)
 			else for i = 1,Game.HeroCount()  do
 			local hero = Game.Hero(i)
-				if hero.isAlly and HasBuff(hero, "orianaghost") and hero.pos:DistanceTo(target.pos) < 250 then
+				if hero.isAlly and HasBuff(hero, "orianaghost") and hero.pos:DistanceTo(target.pos) < 240 then
 				Control.CastSpell(HK_R)
 			else if not ball then return end
 				end
@@ -712,9 +721,9 @@ function Orianna:AutoultMe()
 
 if AIO.Misc.UseR:Value() and Ready(_R)then
 	local Rdamage = Orianna:RDMG()
-	if self:EnemiesNear(myHero.pos,380) >= AIO.Misc.RCount:Value() and HasBuff(myHero, "orianaghostself") and Rdamage >= HpPred(target,1) + target.hpRegen * 2 then
+	if self:EnemiesNear(myHero.pos,310) >= AIO.Misc.RCount:Value() and HasBuff(myHero, "orianaghostself") and Rdamage >= HpPred(target,1) + target.hpRegen * 2 then
 		Control.CastSpell(HK_R)
-	else if not HasBuff(myHero, "orianaghostself") and self:EnemiesNear(myHero.pos,380) >= AIO.Misc.RCount:Value() and Ready(_E) and Ready(_R) then
+	else if not HasBuff(myHero, "orianaghostself") and self:EnemiesNear(myHero.pos,310) >= AIO.Misc.RCount:Value() and Ready(_E) and Ready(_R) then
 		Control.CastSpell(HK_E, myHero)
 	end
 end
@@ -728,7 +737,7 @@ function Orianna:Autoult1Ally()
 	for i = 1, Game.HeroCount() do
 	local hero = Game.Hero(i)
 	if hero.isAlly and not hero.isMe then
-	if HasBuff(hero, "orianaghost") and self:EnemiesNearAlly(hero.pos,380) >= AIO.Misc.RCount:Value() and target.pos:DistanceTo(hero.pos) < 380 then
+	if HasBuff(hero, "orianaghost") and self:EnemiesNearAlly(hero.pos,310) >= AIO.Misc.RCount:Value() and target.pos:DistanceTo(hero.pos) < 310 then
 		Control.CastSpell(HK_R)
 	end
 end
@@ -742,7 +751,7 @@ if AIO.Misc.UseR:Value() and Ready(_R)then
     		for i = 1, Game.HeroCount() do 
     			local hero = Game.Hero(i)
     			if hero.isEnemy and not hero.dead and hero.isTargetable then 
-					if hero.pos:DistanceTo(ball_pos) < 380 then 
+					if hero.pos:DistanceTo(ball_pos) < 310 then 
     					N = N + 1 
     				end
     			end
@@ -758,10 +767,10 @@ if Ready(_R) then
    	for i = 1, Game.HeroCount() do 
     	local hero = Game.Hero(i)
     	if hero.isEnemy and not hero.dead and hero.isTargetable then 
-			if hero.pos:DistanceTo(ball_pos) < 380 then 
+			if hero.pos:DistanceTo(ball_pos) < 310 then 
      	Control.CastSpell(HK_R)
 	elseif HasBuff(myHero, "orianaghost") then
-		if myHero.pos:DistanceTo(hero.pos) < 380 then
+		if myHero.pos:DistanceTo(hero.pos) < 310 then
 		Control.CastSpell(HK_R)
 
 end
@@ -1099,7 +1108,7 @@ function HPred:GetInstantDashTarget(source, range, delay, speed, timingAccuracy,
 				if type(blinkRange) == "table" then
 					--Find the nearest matching particle to our mouse
 					--local target, distance = self:GetNearestParticleByNames(t.pos, blinkRange)
-					--if target and distance < 250 then					
+					--if target and distance < 240 then					
 					--	endPos = target.pos		
 					--end
 				elseif blinkRange > 0 then
@@ -1118,7 +1127,7 @@ function HPred:GetInstantDashTarget(source, range, delay, speed, timingAccuracy,
 							offsetDirection = (t.pos-blinkTarget.pos):Normalized()
 						--They can choose which side of target to come out on , there is no way currently to read this data so we will only use this calculation if the spell radius is large
 						elseif blinkRange == -255 then
-							if radius > 250 then
+							if radius > 240 then
 								endPos = blinkTarget.pos
 							end							
 						end
