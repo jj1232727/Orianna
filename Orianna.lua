@@ -320,7 +320,7 @@ end
 function Orianna:WndMsg(msg, param)
 		
         if msg == 257 then
-		print("hi")
+		
             local ping, delay = Game.Latency() / 1000 , nil
             if param == HK_Q then
                 delay = Q.Delay + ping
