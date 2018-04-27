@@ -304,6 +304,7 @@ function Orianna:__init()
 	self:LoadMenu()
 	Callback.Add("Tick", function() self:Tick() end)
 	Callback.Add("Draw", function() self:Draw() end)
+	Callback.Add("WndMsg",function(Msg, Key)  self:WndMsg(Msg, Key) end)
 	local orbwalkername = ""
 	if _G.SDK then
 		orbwalkername = "IC'S orbwalker"		
@@ -316,13 +317,29 @@ function Orianna:__init()
 	end
 end
 
+function Orianna:WndMsg(msg, param)
+		
+        if msg == 257 then
+		print("hi")
+            local ping, delay = Game.Latency() / 1000 , nil
+            if param == HK_Q then
+                delay = Q.Delay + ping
+            elseif param == HK_E then
+                delay = ping
+            end            
+            if delay then               
+                DelayAction(function() self:Ball() end, delay)
+            end
+        end
+    end
+
 function Orianna:Tick()
 		self:KillstealR()
 		
 		self:AutoultMe()
 		self:Autoult1Ally()
 		self:AutoultBall()
-		DelayAction(function() self:Ball() end , 0.70)
+		--DelayAction(function() self:Ball() end , 0.70)
         if myHero.dead or Game.IsChatOpen() == true or IsRecalling() == true or ExtLibEvade and ExtLibEvade.Evading == true then return end
 	if AIO.Combo.comboActive:Value() then
 	if AIO.Prediction.TPred:Value() then
@@ -361,9 +378,10 @@ function Orianna:Tick()
 	
 	end
 	
-	local clock = os.clock
 
 
+
+	
 	function Orianna:Ball()
 		for i = 1, Game.ObjectCount() do
 			local object = Game.Object(i)
@@ -371,7 +389,7 @@ function Orianna:Tick()
 			if object and string.find(object.name,"ball") then
 				ball_name = object.name
 				ball_pos = object.pos
-				
+				return
 				
 				end
 		
@@ -388,7 +406,6 @@ function Orianna:Tick()
 				end
 			end
 		end
-	
 	end
 
 function Orianna:Draw()
