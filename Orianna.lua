@@ -248,6 +248,8 @@ function Orianna:LoadMenu()
 	AIO:MenuElement({id = "Clear", name = "Clear", type = MENU})
 	AIO.Clear:MenuElement({id = "UseQ", name = "Q", value = true})
 	AIO.Clear:MenuElement({id = "QCount", name = "Use Q on X minions", value = 3, min = 1, max = 4, step = 1})
+	AIO.Clear:MenuElement({id = "UseW", name = "W", value = true})
+	AIO.Clear:MenuElement({id = "WCount", name = "Use W on X minions", value = 3, min = 1, max = 4, step = 1})
 	AIO.Clear:MenuElement({id = "clearActive", name = "Clear key", key = string.byte("V")})
 	
 	AIO:MenuElement({id = "Lasthit", name = "Lasthit", type = MENU})
@@ -286,9 +288,7 @@ function Orianna:LoadMenu()
     AIO.Drawings.ballDraw:MenuElement({id = "BallW", name = "W Enabled", value = true}) 
 	
 	
-	AIO:MenuElement({id = "Prediction", name = "Prediction", type = MENU})
-	AIO.Prediction:MenuElement({id = "TPred", name = "Use TPred", value = true})
-	AIO.Prediction:MenuElement({id = "Nothing", type = SPACE, name = "On for Tpred off for Hpred"})
+	
 	
 	
 	AIO:MenuElement({id = "CustomSpellCast", name = "Use custom spellcast",value = true})
@@ -306,7 +306,7 @@ function Orianna:__init()
 	self:LoadMenu()
 	Callback.Add("Tick", function() self:Tick() end)
 	Callback.Add("Draw", function() self:Draw() end)
-	Callback.Add("WndMsg",function(Msg, Key)  self:WndMsg(Msg, Key) end)
+
 	local orbwalkername = ""
 	if _G.SDK then
 		orbwalkername = "IC'S orbwalker"		
@@ -319,27 +319,15 @@ function Orianna:__init()
 	end
 end
 
-function Orianna:WndMsg(msg, param)
-		
-        if msg == 257 then
-			
-            local ping, delay = Game.Latency() / 1000 , nil
-            if param == HK_Q then
-                delay = Q.Delay + ping
-            elseif param == HK_E then
-                delay = ping
-            end            
-            if delay then               
-                DelayAction(function() self:Ball() end, delay)
-            end
-        end
-    end
+
 
 function Orianna:Tick()
-		--self:KillstealR()
-		--self:AutoultMe()
-		--self:Autoult1Ally()
-		--self:AutoultBall()
+		self:KillstealR()
+		self:AutoultMe()
+		self:Autoult1Ally()
+		self:AutoultBall()
+		--if Game.CanUseSpell(0) ~= 0 or Game.CanUseSpell(2) ~= 0 then
+		self:uBall() --end
 		--DelayAction(function() self:Ball() end , 0.70)
         if myHero.dead or Game.IsChatOpen() == true or IsRecalling() == true or ExtLibEvade and ExtLibEvade.Evading == true then return end
 	if AIO.Combo.comboActive:Value() then
@@ -353,7 +341,6 @@ function Orianna:Tick()
 		self:EThroughTarget() end
 	end
 	if AIO.Harass.harassActive:Value() then
-		AIO.Prediction.TPred:Value()
 		self:Harass()
 		self:OriQH()
 		self:HarassW()
@@ -379,7 +366,33 @@ function Orianna:Tick()
 	end
 	
 
-
+function Orianna:uBall()
+local X, Y = Game.CanUseSpell(0), Game.CanUseSpell(2)
+if X ~= 0 or Y ~= 0 then
+	for i = 1, Game.MissileCount() do
+            local obj = Game.Missile(i)
+			
+            if obj.missileData.owner == myHero.handle and obj.missileData.target == 0 then
+                ball_pos = obj.pos
+            end
+        end
+		end
+		if GotBuff(myHero, "orianaghostself") then 
+			ball = ball_name
+		else
+			for i = 1, Game.HeroCount() do
+				local hero = Game.Hero(i)
+				if GotBuff(hero, "orianaghost") then 
+					ball = hero.pos 
+					break
+				end
+			end
+		end
+		
+	
+		
+		
+end
 	
 	
 	function Orianna:Ball()
@@ -416,7 +429,7 @@ function Orianna:Tick()
 		--This will trigger every time a particle in the game is destroyed
 		ObjectManager:OnParticleDestroy(function(args)	
 			if table.contains(BallNames, args.name) then
-				ball_pos = myHero.pos
+				ball_pos = nil
 			end
 		end)
 		
@@ -436,12 +449,12 @@ function Orianna:Tick()
 
 function Orianna:Draw()
 	if HasBuff(myHero, "orianaghostself") == false and AIO.Drawings.ballDraw.BallR:Value()then
-		Draw.Circle(ball_pos, 240, 5, Draw.Color(200, 255, 87, 51)) end
+		Draw.Circle(ball_pos, 240, 0, Draw.Color(200, 255, 87, 51)) end
 	if HasBuff(myHero, "orianaghostself") == false and AIO.Drawings.ballDraw.BallW:Value()then
-		Draw.Circle(ball_pos, 310, 5, Draw.Color(200, 255, 87, 51)) end
+		Draw.Circle(ball_pos, 310, 0, Draw.Color(200, 255, 87, 51)) end
 	
-if Ready(_Q) and AIO.Drawings.Q.Enabled:Value() then Draw.Circle(myHero.pos, Q.Range, AIO.Drawings.Q.Width:Value(), AIO.Drawings.Q.Color:Value()) end
-if Ready(_E) and AIO.Drawings.E.Enabled:Value() then Draw.Circle(myHero.pos, E.Range, AIO.Drawings.E.Width:Value(), AIO.Drawings.E.Color:Value()) end
+if Ready(_Q) and AIO.Drawings.Q.Enabled:Value() then Draw.Circle(myHero.pos, Q.Range, 0, AIO.Drawings.Q.Color:Value()) end
+if Ready(_E) and AIO.Drawings.E.Enabled:Value() then Draw.Circle(myHero.pos, E.Range, 0, AIO.Drawings.E.Color:Value()) end
 if AIO.Drawings.ballDraw.BallR:Value() and Ready(_R) and not HasBuff(myHero, "orianaghostself") then 
 
 	else if AIO.Drawings.ballDraw.BallR:Value() and Ready(_R) and HasBuff(myHero, "orianaghostself") then
@@ -510,13 +523,16 @@ function Orianna:OriQ()
     if target == nil then return end
 	
 	if AIO.Combo.UseQ:Value() and target and Ready(_Q) then
-	
+		if target.pos:DistanceTo(ball_pos) > 650 and Ready(_E) then 
+		Control.CastSpell(HK_E, myHero)
+		else
 		local hitRate, aimPosition = HPred:GetUnreliableTarget(myHero.pos, Q.Range, Q.Delay, Q.Speed, Q.Width, Q.Collision, 1,nil)	
 		if hitRate and HPred:IsInRange(myHero.pos, aimPosition, Q.Range) then
 			Control.CastSpell(HK_Q, aimPosition)
 			--ball_pos = aimPosition
 			
 		end	
+		end
 	end
 end
 
@@ -580,9 +596,9 @@ function Orianna:BallMe()
 	    end
 function Orianna:EThroughTarget()
 	local target = CurrentTarget(1000)
-	if target == nil or GotBuff(myHero, "orianaghostself") == 0 then return end
+	if target == nil or GotBuff(myHero, "orianaghostself") == 1 or ball_pos == nil then return end
 	local lineSegment1 = gsoClosestPointOnLineSegment(target.pos, myHero.pos, ball_pos)
-	if AIO.Combo.UseE:Value() and lineSegment1 and Ready(_E) and GotBuff(myHero, "orianaghostself") == 0 then 
+	if AIO.Combo.UseE:Value() and lineSegment1 and Ready(_E) and GotBuff(myHero, "orianaghostself") == 0 and target.dead == false then 
 	Control.CastSpell(HK_E, myHero)
 	
 	end
@@ -593,7 +609,7 @@ end
 
 
 function Orianna:Clear()
-	if Ready(_Q) then
+	if Ready(_Q)then
 	local qMinions = {}
 	local mobs = {}
 	
@@ -607,26 +623,32 @@ function Orianna:Clear()
 			end	
 	end	
 		local BestPos, BestHit = GetBestCircularFarmPosition(825, 240, qMinions)
+		
 		if BestHit >= AIO.Clear.QCount:Value() and AIO.Clear.UseQ:Value() then
-			
 			Control.CastSpell(HK_Q,BestPos)
 			
 		end
+		
 	end
 end
 end
 
 function Orianna:ClearJungle()
+	 
 	local minionlist = {}
 	
 			for i = 1, Game.MinionCount() do
 				local minion = Game.Minion(i)
-				if minion.valid and minion.isEnemy and minion.pos:DistanceTo(myHero.pos) < 825 and Ready(_Q) then
-					Control.CastSpell(HK_Q,minion.pos)
-				end
-				if minion.valid and minion.isEnemy and minion.pos:DistanceTo(ball_pos) < 240 and Ready(_W) then
-					Control.CastSpell(HK_W)
-			end
+				
+				
+				if string.find(minion.name, "SRU") then
+					if minion.valid and minion.isEnemy and minion.pos:DistanceTo(myHero.pos) < 825 and Ready(_Q) then
+						Control.CastSpell(HK_Q,minion.pos)
+					end
+					if minion.valid and minion.isEnemy and minion.pos:DistanceTo(ball_pos) < 240 and Ready(_W) then
+						Control.CastSpell(HK_W)
+					end
+					end
 				end
 end
 
@@ -645,7 +667,7 @@ function Orianna:ClearW()
 			end	
 	end	
 		local BestPos, BestHit = GetBestCircularFarmPosition(825, 240, qMinions)
-		if BestHit >= AIO.Clear.QCount:Value() and AIO.Clear.UseQ:Value() and BestPos.DistanceTo(ball_pos) <= 240 then
+		if BestHit >= AIO.Clear.WCount:Value() and AIO.Clear.UseW:Value() then
 			Control.CastSpell(HK_W)
 			
 		end
@@ -744,7 +766,7 @@ function Orianna:AutoultMe()
 
 if AIO.Misc.UseR:Value() and Ready(_R)then
 	local Rdamage = Orianna:RDMG()
-	if self:EnemiesNear(myHero.pos,310) >= AIO.Misc.RCount:Value() and HasBuff(myHero, "orianaghostself") and Rdamage >= HpPred(target,1) + target.hpRegen * 2 then
+	if self:EnemiesNear(myHero.pos,300) >= AIO.Misc.RCount:Value() and HasBuff(myHero, "orianaghostself") and Rdamage >= HpPred(target,1) + target.hpRegen * 2 then
 		Control.CastSpell(HK_R)
 	else if not HasBuff(myHero, "orianaghostself") and self:EnemiesNear(myHero.pos,310) >= AIO.Misc.RCount:Value() and Ready(_E) and Ready(_R) then
 		Control.CastSpell(HK_E, myHero)
@@ -760,7 +782,7 @@ function Orianna:Autoult1Ally()
 	for i = 1, Game.HeroCount() do
 	local hero = Game.Hero(i)
 	if hero.isAlly and not hero.isMe then
-	if HasBuff(hero, "orianaghost") and self:EnemiesNearAlly(hero.pos,310) >= AIO.Misc.RCount:Value() and target.pos:DistanceTo(hero.pos) < 310 then
+	if HasBuff(hero, "orianaghost") and self:EnemiesNearAlly(hero.pos,300) >= AIO.Misc.RCount:Value() and target.pos:DistanceTo(hero.pos) < 300 then
 		Control.CastSpell(HK_R)
 	end
 end
@@ -1799,189 +1821,4 @@ end
 function HPred:GetDistance(p1, p2)
 	return _sqrt(self:GetDistanceSqr(p1, p2))
 end
-
---This is all just begining of the manager code, you should move to the official library once it's done and released for best reliability.
---Feel free to test out the OnBlink callback to find enemies who are using flashes and stuff ;)
-
-class "__ObjectManager"
-
---Localize all the stuff. Can be an efficiency improvement but I haven't tested if all of these are more efficient or not.
-local LocalGameHeroCount 			= Game.HeroCount;
-local LocalGameHero					= Game.Hero;
-local LocalGameMinionCount 			= Game.MinionCount;
-local LocalGameMinion				= Game.Minion;
-local LocalGameParticleCount 		= Game.ParticleCount;
-local LocalGameParticle				= Game.Particle;
-local LocalGameMissileCount 		= Game.MissileCount;
-local LocalGameMissile				= Game.Missile;
-local LocalPairs 					= pairs;
-local LocalType						= type;
-local LocalVector					= Vector;
-local LocalInsert 					= table.insert
-
-
---Initialize the object manager
-function __ObjectManager:__init()
-	Callback.Add('Tick',  function() self:Tick() end)
-	
-	self.CachedMissiles = {}	
-	self.OnMissileCreateCallbacks = {}
-	self.OnMissileDestroyCallbacks = {}
-	self.OnBlinkCallbacks = {}
-	
-	self.CachedParticles = {}
-	self.OnParticleCreateCallbacks = {}
-	self.OnParticleDestroyCallbacks = {}
-	
-	self.BlinkParticleLookupTable = 
-	{
-		"global_ss_flash_02.troy",
-		"Lissandra_Base_E_Arrival.troy",
-		"LeBlanc_Base_W_return_activation.troy",
-		"Zed_Base_CloneSwap",
-	}
-end
-
---Register Missile Create Event
-function __ObjectManager:OnMissileCreate(cb)
-	LocalInsert(ObjectManager.OnMissileCreateCallbacks, cb)
-end
-
---Trigger Missile Create Event
-function __ObjectManager:MissileCreated(missile)
-	for i = 1, #self.OnMissileCreateCallbacks do
-		self.OnMissileCreateCallbacks[i](missile);
-	end
-end
-
---Register Missile Destroy Event
-function __ObjectManager:OnMissileDestroy(cb)
-	LocalInsert(ObjectManager.OnMissileDestroyCallbacks, cb)
-end
-
---Trigger Missile Destroyed Event
-function __ObjectManager:MissileDestroyed(missile)
-	for i = 1, #self.OnMissileDestroyCallbacks do
-		self.OnMissileDestroyCallbacks[i](missile);
-	end
-end
-
---Register Particle Create Event
-function __ObjectManager:OnParticleCreate(cb)
-	LocalInsert(ObjectManager.OnParticleCreateCallbacks, cb)
-end
-
---Trigger Particle Created Event
-function __ObjectManager:ParticleCreated(missile)
-	for i = 1, #self.OnParticleCreateCallbacks do
-		self.OnParticleCreateCallbacks[i](missile);
-	end
-end
-
---Register Particle Destroy Event
-function __ObjectManager:OnParticleDestroy(cb)
-	LocalInsert(ObjectManager.OnParticleDestroyCallbacks, cb)
-end
-
---Trigger particle Destroyed Event
-function __ObjectManager:ParticleDestroyed(particle)
-	for i = 1, #self.OnParticleDestroyCallbacks do
-		self.OnParticleDestroyCallbacks[i](particle);
-	end
-end
-
---RegisterOn Blink Event
-function __ObjectManager:OnBlink(cb)
-	--If there are no on particle callbacks we need to add one or it might never run!
-	if #self.OnBlinkCallbacks == 0 then		
-		self:OnParticleCreate(function(particle) self:CheckIfBlinkParticle(particle) end)
-	end
-	LocalInsert(ObjectManager.OnBlinkCallbacks, cb)
-end
-
---Trigger Blink Event
-function __ObjectManager:Blinked(target)
-	for i = 1, #self.OnBlinkCallbacks do
-		self.OnBlinkCallbacks[i](target);
-	end
-end
-
-
---Search for changes in particle or missiles in game. trigger the appropriate events.
-function __ObjectManager:Tick()
-	--Cache Particles ONLY if a create or destroy event is registered: If not it's a waste of processing
-	if #self.OnParticleCreateCallbacks > 0 or #self.OnParticleDestroyCallbacks > 0 then
-		for _, particle in LocalPairs(self.CachedParticles) do
-			if not particle or not particle.valid then
-				if particle then					
-					self:ParticleDestroyed(particle)
-				end
-				self.CachedParticles[_] = nil
-			else
-				particle.valid = false
-			end
-		end	
-		
-		for i = 1, LocalGameParticleCount() do 
-			local particle = LocalGameParticle(i)
-			if particle ~= nil and LocalType(particle) == "userdata" then
-				if self.CachedParticles[particle.networkID] then
-					self.CachedParticles[particle.networkID].valid = true
-				else
-					--Todo: a system to try to associate a particle with its owner? There's no way I know to get it right now.
-					local particleData = { valid = true, pos = particle.pos, name = particle.name}
-					self.CachedParticles[particle.networkID] =particleData
-					self:ParticleCreated(particleData)
-				end
-			end
-		end		
-	end
-	
-	--Cache Missiles ONLY if a create or destroy event is registered: If not it's a waste of processing
-	if #self.OnMissileCreateCallbacks > 0 or #self.OnMissileDestroyCallbacks > 0 then
-		for _, missile in LocalPairs(self.CachedMissiles) do
-			if not missile or not missile.data or not missile.valid then
-				if missile and missile.data then
-					self:MissileDestroyed(missile)
-				end
-				self.CachedMissiles[_] = nil
-			else		
-				missile.valid = false
-			end
-		end	
-		
-		for i = 1, LocalGameMissileCount() do 
-			local missile = LocalGameMissile(i)
-			if missile ~= nil and LocalType(missile) == "userdata" and missile.missileData then
-				if self.CachedMissiles[missile.networkID] then
-					self.CachedMissiles[missile.networkID].valid = true
-				else
-					--We need a direct reference to the missile object to handle position/start/end/speed/etc.
-					--We pre calculate a forward vector to avoid having to re-calculate it every frame for collision detection
-						--TODO: Test that all missiles have a start/end pos and that this doesn't throw exceptions :O
-					local missileData = 
-					{ 
-						valid = true,
-						name = missile.name,
-						forward = LocalVector(
-							missile.missileData.endPos.x -missile.missileData.startPos.x,
-							missile.missileData.endPos.y -missile.missileData.startPos.y,
-							missile.missileData.endPos.z -missile.missileData.startPos.z):Normalized(),
-						networkID = missile.networkID,
-						data = missile
-					}
-					self.CachedMissiles[missile.networkID] =missileData
-					self:MissileCreated(missileData)
-				end
-			end
-		end
-	end
-end
-
-
-
-	
-Callback.Add("Load",function()
-	_G[myHero.charName]()
-end)
 
