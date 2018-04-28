@@ -6,6 +6,7 @@ require "MapPosition"
 local ball_name = ""
 local ball_pos = ""
 local AIOIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
+local timer = os.clock() -1      -- initialise a timer at the start of the script 
 
 
 
@@ -155,6 +156,7 @@ end
 
 --Gamerstron PointLineSegment
 local function gsoClosestPointOnLineSegment(p, p1, p2)
+	if p1 == nil or p2 == nil or p == nil then end
     local px,pz = p.x, p.z
     local ax,az = p1.x, p1.z
     local bx,bz = p2.x, p2.z
@@ -334,10 +336,7 @@ function Orianna:WndMsg(msg, param)
     end
 
 function Orianna:Tick()
-	
-
 		--self:KillstealR()
-		
 		--self:AutoultMe()
 		--self:Autoult1Ally()
 		--self:AutoultBall()
@@ -346,7 +345,7 @@ function Orianna:Tick()
 	if AIO.Combo.comboActive:Value() then
 		self:OriQ()
 		self:KillstealR()
-		self:AutoultMe()
+		---self:AutoultMe()
 		self:Autoult1Ally()
 		self:AutoultBall()
 		self:ComboW()
@@ -381,10 +380,19 @@ function Orianna:Tick()
 	
 
 
-
+	
 	
 	function Orianna:Ball()
-		--[[for i = 1, Game.ObjectCount() do
+		local BallNames = 
+{
+	--Ball name on ground: Add to list if it changes with skins. Requires testing :D
+	"Orianna_Base_Q_yomu_ring_green",
+}
+
+		--local BallPosition = nil
+		
+		--[[
+		for i = 1, Game.ObjectCount() do
 			local object = Game.Object(i)
 			
 			if object and string.find(object.name,"ball") then
@@ -394,19 +402,36 @@ function Orianna:Tick()
 				
 				end
 		
-		end	]]--
+		end	
+		]]--
+		ObjectManager = __ObjectManager()
+		--This will trigger every time a particle is created
+		ObjectManager:OnParticleCreate(function(args)
+			--Match up the name: NOTE IT MAY CHANGE WITH SKIN USED... 
+			if table.contains(BallNames, args.name) then
+				ball_pos = args.pos 
+			end
+		end)
+
+		--This will trigger every time a particle in the game is destroyed
+		ObjectManager:OnParticleDestroy(function(args)	
+			if table.contains(BallNames, args.name) then
+				ball_pos = myHero.pos
+			end
+		end)
 		
-		if HasBuff(myHero, "orianaghostself") then 
+		if GotBuff(myHero, "orianaghostself") then 
 			ball = ball_name
 		else
 			for i = 1, Game.HeroCount() do
 				local hero = Game.Hero(i)
-				if HasBuff(hero, "orianaghost") then 
+				if GotBuff(hero, "orianaghost") then 
 					ball = hero.pos 
 					break
 				end
 			end
 		end
+		
 	end
 
 function Orianna:Draw()
@@ -475,7 +500,7 @@ function Orianna:Combo()
 		    local castpos,HitChance, pos = TPred:GetBestCastPosition(target, Q.Delay , Q.Width, Q.Range, Q.Speed, myHero.pos, Q.ignorecol, Q.Type )
 		    if (HitChance > 0 ) then
 				Control.CastSpell(HK_Q, castpos)
-				ball_pos = castpos
+				--ball_pos = castpos
 			end
 		    end
 	    end
@@ -489,7 +514,8 @@ function Orianna:OriQ()
 		local hitRate, aimPosition = HPred:GetUnreliableTarget(myHero.pos, Q.Range, Q.Delay, Q.Speed, Q.Width, Q.Collision, 1,nil)	
 		if hitRate and HPred:IsInRange(myHero.pos, aimPosition, Q.Range) then
 			Control.CastSpell(HK_Q, aimPosition)
-			ball_pos = aimPosition
+			--ball_pos = aimPosition
+			
 		end	
 	end
 end
@@ -503,7 +529,7 @@ function Orianna:OriQH()
 		local hitRate, aimPosition = HPred:GetUnreliableTarget(myHero.pos, Q.Range, Q.Delay, Q.Speed, Q.Width, Q.Collision, 1,nil)	
 		if hitRate and HPred:IsInRange(myHero.pos, aimPosition, Q.Range) then
 			Control.CastSpell(HK_Q, aimPosition)
-			ball_pos = aimPosition
+			--ball_pos = aimPosition
 		end	
 	end
 end
@@ -516,7 +542,7 @@ function Orianna:Harass()
 		    local castpos,HitChance, pos = TPred:GetBestCastPosition(target, Q.Delay , Q.Width, Q.Range, Q.Speed, myHero.pos, Q.ignorecol, Q.Type )
 		    if (HitChance > 0 ) then
 				Control.CastSpell(HK_Q, castpos)
-				ball_pos = castpos
+				--ball_pos = castpos
 			end
 		    end
 	    end
@@ -554,10 +580,9 @@ function Orianna:BallMe()
 	    end
 function Orianna:EThroughTarget()
 	local target = CurrentTarget(1000)
-	
-	if target == nil then return end
-	local lineSegment1 = gsoClosestPointOnLineSegment(target.pos, myHero.pos,ball_pos)
-	if AIO.Combo.UseE:Value() and Ready(_E) and lineSegment1 and HasBuff(myHero, "orianaghostself") == false then 
+	if target == nil or GotBuff(myHero, "orianaghostself") == 0 then return end
+	local lineSegment1 = gsoClosestPointOnLineSegment(target.pos, myHero.pos, ball_pos)
+	if AIO.Combo.UseE:Value() and lineSegment1 and Ready(_E) and GotBuff(myHero, "orianaghostself") == 0 then 
 	Control.CastSpell(HK_E, myHero)
 	
 	end
@@ -585,7 +610,7 @@ function Orianna:Clear()
 		if BestHit >= AIO.Clear.QCount:Value() and AIO.Clear.UseQ:Value() then
 			
 			Control.CastSpell(HK_Q,BestPos)
-			ball_pos = BestPos
+			
 		end
 	end
 end
@@ -598,7 +623,6 @@ function Orianna:ClearJungle()
 				local minion = Game.Minion(i)
 				if minion.valid and minion.isEnemy and minion.pos:DistanceTo(myHero.pos) < 825 and Ready(_Q) then
 					Control.CastSpell(HK_Q,minion.pos)
-					ball_pos = minion.pos
 				end
 				if minion.valid and minion.isEnemy and minion.pos:DistanceTo(ball_pos) < 240 and Ready(_W) then
 					Control.CastSpell(HK_W)
@@ -621,7 +645,7 @@ function Orianna:ClearW()
 			end	
 	end	
 		local BestPos, BestHit = GetBestCircularFarmPosition(825, 240, qMinions)
-		if BestHit >= AIO.Clear.QCount:Value() and AIO.Clear.UseQ:Value() then
+		if BestHit >= AIO.Clear.QCount:Value() and AIO.Clear.UseQ:Value() and BestPos.DistanceTo(ball_pos) <= 240 then
 			Control.CastSpell(HK_W)
 			
 		end
@@ -637,7 +661,6 @@ function Orianna:Lasthit()
 			if myHero.pos:DistanceTo(minion.pos) < 825 and AIO.Lasthit.UseQ:Value() and minion.isEnemy and not minion.dead then
 				if Qdamage >= HpPred(minion,1) then
 			    Control.CastSpell(HK_Q,minion)
-				ball_pos = minion
 				end
 			end
 		end
@@ -1776,6 +1799,186 @@ end
 function HPred:GetDistance(p1, p2)
 	return _sqrt(self:GetDistanceSqr(p1, p2))
 end
+
+--This is all just begining of the manager code, you should move to the official library once it's done and released for best reliability.
+--Feel free to test out the OnBlink callback to find enemies who are using flashes and stuff ;)
+
+class "__ObjectManager"
+
+--Localize all the stuff. Can be an efficiency improvement but I haven't tested if all of these are more efficient or not.
+local LocalGameHeroCount 			= Game.HeroCount;
+local LocalGameHero					= Game.Hero;
+local LocalGameMinionCount 			= Game.MinionCount;
+local LocalGameMinion				= Game.Minion;
+local LocalGameParticleCount 		= Game.ParticleCount;
+local LocalGameParticle				= Game.Particle;
+local LocalGameMissileCount 		= Game.MissileCount;
+local LocalGameMissile				= Game.Missile;
+local LocalPairs 					= pairs;
+local LocalType						= type;
+local LocalVector					= Vector;
+local LocalInsert 					= table.insert
+
+
+--Initialize the object manager
+function __ObjectManager:__init()
+	Callback.Add('Tick',  function() self:Tick() end)
+	
+	self.CachedMissiles = {}	
+	self.OnMissileCreateCallbacks = {}
+	self.OnMissileDestroyCallbacks = {}
+	self.OnBlinkCallbacks = {}
+	
+	self.CachedParticles = {}
+	self.OnParticleCreateCallbacks = {}
+	self.OnParticleDestroyCallbacks = {}
+	
+	self.BlinkParticleLookupTable = 
+	{
+		"global_ss_flash_02.troy",
+		"Lissandra_Base_E_Arrival.troy",
+		"LeBlanc_Base_W_return_activation.troy",
+		"Zed_Base_CloneSwap",
+	}
+end
+
+--Register Missile Create Event
+function __ObjectManager:OnMissileCreate(cb)
+	LocalInsert(ObjectManager.OnMissileCreateCallbacks, cb)
+end
+
+--Trigger Missile Create Event
+function __ObjectManager:MissileCreated(missile)
+	for i = 1, #self.OnMissileCreateCallbacks do
+		self.OnMissileCreateCallbacks[i](missile);
+	end
+end
+
+--Register Missile Destroy Event
+function __ObjectManager:OnMissileDestroy(cb)
+	LocalInsert(ObjectManager.OnMissileDestroyCallbacks, cb)
+end
+
+--Trigger Missile Destroyed Event
+function __ObjectManager:MissileDestroyed(missile)
+	for i = 1, #self.OnMissileDestroyCallbacks do
+		self.OnMissileDestroyCallbacks[i](missile);
+	end
+end
+
+--Register Particle Create Event
+function __ObjectManager:OnParticleCreate(cb)
+	LocalInsert(ObjectManager.OnParticleCreateCallbacks, cb)
+end
+
+--Trigger Particle Created Event
+function __ObjectManager:ParticleCreated(missile)
+	for i = 1, #self.OnParticleCreateCallbacks do
+		self.OnParticleCreateCallbacks[i](missile);
+	end
+end
+
+--Register Particle Destroy Event
+function __ObjectManager:OnParticleDestroy(cb)
+	LocalInsert(ObjectManager.OnParticleDestroyCallbacks, cb)
+end
+
+--Trigger particle Destroyed Event
+function __ObjectManager:ParticleDestroyed(particle)
+	for i = 1, #self.OnParticleDestroyCallbacks do
+		self.OnParticleDestroyCallbacks[i](particle);
+	end
+end
+
+--RegisterOn Blink Event
+function __ObjectManager:OnBlink(cb)
+	--If there are no on particle callbacks we need to add one or it might never run!
+	if #self.OnBlinkCallbacks == 0 then		
+		self:OnParticleCreate(function(particle) self:CheckIfBlinkParticle(particle) end)
+	end
+	LocalInsert(ObjectManager.OnBlinkCallbacks, cb)
+end
+
+--Trigger Blink Event
+function __ObjectManager:Blinked(target)
+	for i = 1, #self.OnBlinkCallbacks do
+		self.OnBlinkCallbacks[i](target);
+	end
+end
+
+
+--Search for changes in particle or missiles in game. trigger the appropriate events.
+function __ObjectManager:Tick()
+	--Cache Particles ONLY if a create or destroy event is registered: If not it's a waste of processing
+	if #self.OnParticleCreateCallbacks > 0 or #self.OnParticleDestroyCallbacks > 0 then
+		for _, particle in LocalPairs(self.CachedParticles) do
+			if not particle or not particle.valid then
+				if particle then					
+					self:ParticleDestroyed(particle)
+				end
+				self.CachedParticles[_] = nil
+			else
+				particle.valid = false
+			end
+		end	
+		
+		for i = 1, LocalGameParticleCount() do 
+			local particle = LocalGameParticle(i)
+			if particle ~= nil and LocalType(particle) == "userdata" then
+				if self.CachedParticles[particle.networkID] then
+					self.CachedParticles[particle.networkID].valid = true
+				else
+					--Todo: a system to try to associate a particle with its owner? There's no way I know to get it right now.
+					local particleData = { valid = true, pos = particle.pos, name = particle.name}
+					self.CachedParticles[particle.networkID] =particleData
+					self:ParticleCreated(particleData)
+				end
+			end
+		end		
+	end
+	
+	--Cache Missiles ONLY if a create or destroy event is registered: If not it's a waste of processing
+	if #self.OnMissileCreateCallbacks > 0 or #self.OnMissileDestroyCallbacks > 0 then
+		for _, missile in LocalPairs(self.CachedMissiles) do
+			if not missile or not missile.data or not missile.valid then
+				if missile and missile.data then
+					self:MissileDestroyed(missile)
+				end
+				self.CachedMissiles[_] = nil
+			else		
+				missile.valid = false
+			end
+		end	
+		
+		for i = 1, LocalGameMissileCount() do 
+			local missile = LocalGameMissile(i)
+			if missile ~= nil and LocalType(missile) == "userdata" and missile.missileData then
+				if self.CachedMissiles[missile.networkID] then
+					self.CachedMissiles[missile.networkID].valid = true
+				else
+					--We need a direct reference to the missile object to handle position/start/end/speed/etc.
+					--We pre calculate a forward vector to avoid having to re-calculate it every frame for collision detection
+						--TODO: Test that all missiles have a start/end pos and that this doesn't throw exceptions :O
+					local missileData = 
+					{ 
+						valid = true,
+						name = missile.name,
+						forward = LocalVector(
+							missile.missileData.endPos.x -missile.missileData.startPos.x,
+							missile.missileData.endPos.y -missile.missileData.startPos.y,
+							missile.missileData.endPos.z -missile.missileData.startPos.z):Normalized(),
+						networkID = missile.networkID,
+						data = missile
+					}
+					self.CachedMissiles[missile.networkID] =missileData
+					self:MissileCreated(missileData)
+				end
+			end
+		end
+	end
+end
+
+
 
 	
 Callback.Add("Load",function()
