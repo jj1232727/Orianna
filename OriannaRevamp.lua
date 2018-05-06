@@ -1,4 +1,4 @@
---if myHero.CharName ~= 'Orianna' then return end
+if myHero.CharName ~= 'Orianna' then return end
 
 require "DamageLib"
 require "MapPosition"
