@@ -4,11 +4,13 @@ require "DamageLib"
 require "MapPosition"
 
 	local ball_pos = nil
+	Latency = Game.Latency
+	local ping = Game.Latency()/1000
 	local AIOIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
-	local Q = {Range = 825, Width = 40, Delay = 0.40, Speed = 1400, Collision = false, aoe = false, Type = "circular", Scale = .5, Radius = 80, From = myHero}
-	local W = {Delay = 0.25, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 250, Scale = .7, From = myHero}
-	local E = {Range = 1100, Width = 40, Delay = 0.25, Speed = 1700, Collision = false, aoe = false, Type = "line", Scale = .3, From = myHero}
-	local R = {Delay = 0.6, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 325, Scale = .70, From = myHero, Range = 825}
+	local Q = {Range = 825, Width = 40, Delay = 0.40 + ping, Speed = 1400, Collision = false, aoe = false, Type = "circular", Scale = .5, Radius = 175, From = myHero}
+	local W = {Delay = 0.25 + ping, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 250, Scale = .7, From = myHero, Range = 825}
+	local E = {Range = 1100, Width = 40, Delay = 0.25 + ping, Speed = 1700, Collision = false, aoe = false, Type = "line", Scale = .3, From = myHero}
+	local R = {Delay = 0.6 + ping, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 325, Scale = .70, From = myHero, Range = 825}
 	local R2 = {Delay = 0.6, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = R.Radius+Q.Radius, Scale = .70, From = myHero, Range = 825}
 	local Qdamage = {60, 90, 120, 150, 180}
 	local Wdamage = {60, 105, 150, 195, 240}
@@ -17,8 +19,7 @@ require "MapPosition"
 	local Timer  = Game.Timer
 	--local ballOnMe = GotBuff(myHero, "orianaghostself") == 1 or false
 	local mydmg = _G.getdmg
-	local hpred
-	local Latency = Game.Latency
+	
 	local sHero = Game.Hero
 	local TEAM_ALLY = myHero.team
 	local TEAM_ENEMY = 300 - TEAM_ALLY
@@ -147,10 +148,6 @@ require "MapPosition"
     'Load',
 	function()
 		
-		if FileExist(COMMON_PATH .. "HPred.lua") then
-			require 'HPred'
-			hpred = _G.HPred
-		end
 		Saga_Menu()
 		ballLoad()
 		TotalHeroes = GetEnemyHeroes()
@@ -184,7 +181,7 @@ require "MapPosition"
 				
 				if myHero.dead or Game.IsChatOpen() == true  or IsEvading() == true then return end
 				if Saga.Combo.comboActive:Value() then
-					--if myHero.attackData.stae == 2 then return end
+					if myHero.attackData.stae == 2 then return end
 					combBreaker()
 				end
 				if Saga.Harass.harassActive:Value() then
@@ -598,16 +595,10 @@ combBreaker = function()
 	ER, HER = CheckEnemiesHitByR()
 	if kills >= 1 or pk >= 2 and Game.CanUseSpell(3) == 0 then
 		if Game.CanUseSpell(0) == 0 and Game.CanUseSpell(3) == 0 then
-			local n, enem = GetEnemiesinRangeCount(ball_pos, R.Radius+ Q.Radius)
-			if n >= ER then
-			pos = GetBestCircularCastPos(R, target, HER)
-			Control.CastSpell(HK_Q, pos)
-			end
-		else
 			if Game.CanUseSpell(3) == 0 then
 			Control.CastSpell(HK_R) end 
 		end
-	end 
+	end
 	
 	if ER and ER >= Saga.Misc.RCount:Value() and Game.CanUseSpell(3) == 0 then
 		Control.CastSpell(HK_R)
@@ -618,36 +609,26 @@ combBreaker = function()
 	local hero, closest = getClosestAlly(myHero.pos, target.pos)
 	local pos
 
-
-	if Game.CanUseSpell(0) == 0 and Saga.Combo.UseQ:Value() then
-		if GetDistance(ball_pos, target.pos) > GetDistance(hero.pos, target.pos) + 200 and Game.CanUseSpell(2) == 0 and hero and Saga.Combo.UseE:Value() then
-			Control.CastSpell(HK_E, hero)
+	if GetDistance(ball_pos, target.pos) > GetDistance(hero.pos, target.pos) + 200 and Game.CanUseSpell(2) == 0 and hero and Saga.Combo.UseE:Value() then
+		Control.CastSpell(HK_E, hero)
+	end
+	if Game.CanUseSpell(0) == 0 then
+		pos = GetBestCircularCastPos(W, target, HER)
+		if Game.CanUseSpell(3) == 0 then
+		pos = GetBestCircularCastPos(R, target, HER)
 		end
-		if ER == 1 then
-			if hpred then
-				local target, aimPosition = hpred:GetReliableTarget(myHero.pos, Q.Range, Q.Delay, Q.Speed,Q.Width, .5, false)
-				if target and hpred:IsInRange(myHero.pos, aimPosition, Q.Range) and Game.CanUseSpell(0) == 0 then
-					Control.CastSpell(HK_Q, aimPosition)
-				end
-			else
-			pos = GetBestCastPosition(target, Q)
-			Control.CastSpell(HK_Q, pos)
-			end
-		elseif ER > 1 and Game.CanUseSpell(3)== 0 then
-			local n, enem = GetEnemiesinRangeCount(ball_pos, R.Radius+ Q.Radius)
-			if n >= ER then
-			pos = GetBestCircularCastPos(R, target, HER)
-			Control.CastSpell(HK_Q, pos)
-			end
-		else
-			pos = GetBestCastPosition(target, Q)
-			Control.CastSpell(HK_Q, pos)
+		
+		local Dist = GetDistanceSqr(pos, myHero.pos) - target.boundingRadius*target.boundingRadius
+		pos = myHero.pos + (pos - myHero.pos):Normalized()*(GetDistance(pos, myHero.pos) + 0.5*target.boundingRadius)
+		if Dist > (Q.Range*Q.Range) then
+			pos = myHero.pos + (pos - myHero.pos):Normalized()*Q.Range
 		end
+		Control.CastSpell(HK_Q, pos)
 	end
 
 	
 
-	if Game.CanUseSpell(2) == 0 and Saga.Combo.UseE:Value() and target.pos:DistanceTo() < 500  then
+	if Game.CanUseSpell(2) == 0 and Saga.Combo.UseE:Value() and Game.CanUseSpell(0) ~= 0  then
 		GetEnemyHitByE()
 	end
 
@@ -659,17 +640,28 @@ end
 		target = findEmemy(Q.Range)
 		if target and validTarget(target) then 
 			
-		if Game.CanUseSpell(1) == 0 and Saga.Harass.UseW:Value() then 
-			local Tar2Ball = GetDistanceSqr(ball_pos, target.pos) - target.boundingRadius * target.boundingRadius
-			if Tar2Ball < (W.Radius * W.Radius) then
-			Control.CastSpell(HK_W)
-		end
+			if Saga.Combo.UseW:Value() and Game.CanUseSpell(1) == 0 then
+				pos = GetBestCastPosition(target, Q)
+				local Tar2Ball = GetDistanceSqr(ball_pos, pos) - target.boundingRadius * target.boundingRadius
+				if Tar2Ball < (W.Radius * W.Radius) then
+					Control.CastSpell(HK_W)
+				end
+			end
+			
+		if Game.CanUseSpell(0) == 0 then
+			pos = GetBestCircularCastPos(W, target, HER)
+			if Game.CanUseSpell(3) == 0 then
+			pos = GetBestCircularCastPos(R, target, HER)
+			end
+			
+			local Dist = GetDistanceSqr(pos, myHero.pos) - target.boundingRadius*target.boundingRadius
+			pos = myHero.pos + (pos - myHero.pos):Normalized()*(GetDistance(pos, myHero.pos) + 0.5*target.boundingRadius)
+			if Dist > (Q.Range*Q.Range) then
+				pos = myHero.pos + (pos - myHero.pos):Normalized()*Q.Range
+			end
+			Control.CastSpell(HK_Q, pos)
 		end
 			
-			pos = GetBestCastPosition(target, Q)
-			if Game.CanUseSpell(0) == 0 and validTarget(target) and Saga.Harass.UseQ:Value() then
-				pos = GetBestCastPosition(target, Q)
-				Control.CastSpell(HK_Q, pos) end
 		end
 	end
 	
