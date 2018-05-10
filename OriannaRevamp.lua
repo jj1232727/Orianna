@@ -607,8 +607,17 @@ combBreaker = function()
 		Control.CastSpell(HK_R)
 	end
 
+	local ally = findAlly(E.Range)
+		if ally then
+			local eHit = GetEnemiesinRangeCountofR(ally)
+			if eHit >= 2 and Game.CanUseSpell(2) == 0 and Saga.Combo.UseE:Value()then
+				Control.CastSpell(HK_E,ally)
+			end
+		end
+
 	local hero, closest = getClosestAlly(myHero.pos, target.pos)
 	local pos
+
 
 	if Game.CanUseSpell(0) == 0 and Saga.Combo.UseQ:Value() then
 		if GetDistance(ball_pos, target.pos) > GetDistance(hero.pos, target.pos) + 200 and Game.CanUseSpell(2) == 0 and hero and Saga.Combo.UseE:Value() then
@@ -628,6 +637,8 @@ combBreaker = function()
 			Control.CastSpell(HK_Q, pos)
 		end
 	end
+
+	
 
 	if Game.CanUseSpell(2) == 0 and Saga.Combo.UseE:Value() and target.pos:DistanceTo() < 500  then
 		GetEnemyHitByE()
