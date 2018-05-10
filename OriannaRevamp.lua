@@ -5,10 +5,10 @@ require "MapPosition"
 
 	local ball_pos = nil
 	local AIOIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
-	local Q = {Range = 825, Width = 40, Delay = 0.40, Speed = 1400, Collision = false, aoe = false, Type = "circular", Scale = .5, Radius = 250, From = myHero}
+	local Q = {Range = 825, Width = 40, Delay = 0.40, Speed = 1400, Collision = false, aoe = false, Type = "circular", Scale = .5, Radius = 80, From = myHero}
 	local W = {Delay = 0.25, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 250, Scale = .7, From = myHero}
 	local E = {Range = 1100, Width = 40, Delay = 0.25, Speed = 1700, Collision = false, aoe = false, Type = "line", Scale = .3, From = myHero}
-	local R = {Delay = 0.6, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 300, Scale = .70, From = myHero, Range = 825}
+	local R = {Delay = 0.6, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 325, Scale = .70, From = myHero, Range = 825}
 	local R2 = {Delay = 0.6, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = R.Radius+Q.Radius, Scale = .70, From = myHero, Range = 825}
 	local Qdamage = {60, 90, 120, 150, 180}
 	local Wdamage = {60, 105, 150, 195, 240}
@@ -17,7 +17,7 @@ require "MapPosition"
 	local Timer  = Game.Timer
 	--local ballOnMe = GotBuff(myHero, "orianaghostself") == 1 or false
 	local mydmg = _G.getdmg
-	--local pred = _G.Prediction
+	local hpred
 	local Latency = Game.Latency
 	local sHero = Game.Hero
 	local TEAM_ALLY = myHero.team
@@ -146,6 +146,11 @@ require "MapPosition"
 	  LocalCallbackAdd(
     'Load',
 	function()
+		
+		if FileExist(COMMON_PATH .. "HPred.lua") then
+			require 'HPred'
+			hpred = _G.HPred
+		end
 		Saga_Menu()
 		ballLoad()
 		TotalHeroes = GetEnemyHeroes()
@@ -179,7 +184,7 @@ require "MapPosition"
 				
 				if myHero.dead or Game.IsChatOpen() == true  or IsEvading() == true then return end
 				if Saga.Combo.comboActive:Value() then
-					if myHero.attackData.stae == 2 then return end
+					--if myHero.attackData.stae == 2 then return end
 					combBreaker()
 				end
 				if Saga.Harass.harassActive:Value() then
@@ -599,7 +604,8 @@ combBreaker = function()
 			Control.CastSpell(HK_Q, pos)
 			end
 		else
-			Control.CastSpell(HK_R)
+			if Game.CanUseSpell(3) == 0 then
+			Control.CastSpell(HK_R) end 
 		end
 	end 
 	
@@ -607,13 +613,7 @@ combBreaker = function()
 		Control.CastSpell(HK_R)
 	end
 
-	local ally = findAlly(E.Range)
-		if ally then
-			local eHit = GetEnemiesinRangeCountofR(ally)
-			if eHit >= 2 and Game.CanUseSpell(2) == 0 and Saga.Combo.UseE:Value()then
-				Control.CastSpell(HK_E,ally)
-			end
-		end
+	
 
 	local hero, closest = getClosestAlly(myHero.pos, target.pos)
 	local pos
@@ -624,8 +624,15 @@ combBreaker = function()
 			Control.CastSpell(HK_E, hero)
 		end
 		if ER == 1 then
+			if hpred then
+				local target, aimPosition = hpred:GetReliableTarget(myHero.pos, Q.Range, Q.Delay, Q.Speed,Q.Width, .5, false)
+				if target and hpred:IsInRange(myHero.pos, aimPosition, Q.Range) and Game.CanUseSpell(0) == 0 then
+					Control.CastSpell(HK_Q, aimPosition)
+				end
+			else
 			pos = GetBestCastPosition(target, Q)
 			Control.CastSpell(HK_Q, pos)
+			end
 		elseif ER > 1 and Game.CanUseSpell(3)== 0 then
 			local n, enem = GetEnemiesinRangeCount(ball_pos, R.Radius+ Q.Radius)
 			if n >= ER then
@@ -1097,11 +1104,12 @@ GetBestLinearCastPos = function(spell, sTar, list)
 	--
 	local center = GetBestCircularCastPos(spell, sTar, list)
 	local endPos = startPos + (center - startPos):Normalized() * spell.Range
-	local MostHit = isHero      
+	local MostHit = isHero
 	return endPos, MostHit
 end
 
 end 
+
 
 
 
