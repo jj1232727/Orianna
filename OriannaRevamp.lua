@@ -1,4 +1,4 @@
-if myHero.charName ~= 'Orianna' then return end
+--if myHero.CharName ~= 'Orianna' then return end
 
 require "DamageLib"
 require "MapPosition"
@@ -8,7 +8,8 @@ require "MapPosition"
 	local Q = {Range = 825, Width = 40, Delay = 0.40, Speed = 1400, Collision = false, aoe = false, Type = "circular", Scale = .5, Radius = 250, From = myHero}
 	local W = {Delay = 0.25, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 250, Scale = .7, From = myHero}
 	local E = {Range = 1100, Width = 40, Delay = 0.25, Speed = 1700, Collision = false, aoe = false, Type = "line", Scale = .3, From = myHero}
-	local R = {Delay = 0.6, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 320, Scale = .70, From = myHero, Range = 825}
+	local R = {Delay = 0.6, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 300, Scale = .70, From = myHero, Range = 825}
+	local R2 = {Delay = 0.6, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = R.Radius+Q.Radius, Scale = .70, From = myHero, Range = 825}
 	local Qdamage = {60, 90, 120, 150, 180}
 	local Wdamage = {60, 105, 150, 195, 240}
 	local Edamage = {60, 90, 120, 150, 180}
@@ -178,6 +179,7 @@ require "MapPosition"
 				
 				if myHero.dead or Game.IsChatOpen() == true  or IsEvading() == true then return end
 				if Saga.Combo.comboActive:Value() then
+					if myHero.attackData.stae == 2 then return end
 					combBreaker()
 				end
 				if Saga.Harass.harassActive:Value() then
@@ -539,7 +541,8 @@ end]]--
 	local inRadius =  {}
     for i = 1, TotalHeroes do
 		local unit = _EnemyHeroes[i]
-			if  GetDistanceSqr(unit.pos, ball_pos) <= R.Radius * R.Radius then
+		pos = GetBestCastPosition(unit, Q)
+			if  GetDistanceSqr(pos, ball_pos) <= R.Radius * R.Radius then
                 inRadius[myCounter] = unit
                 myCounter = myCounter + 1
             end
@@ -579,7 +582,8 @@ combBreaker = function()
 	local dmg = GetComboDamage(target)
 
 	if Saga.Combo.UseW:Value() and Game.CanUseSpell(1) == 0 then
-		local Tar2Ball = GetDistanceSqr(ball_pos, target.pos) - target.boundingRadius * target.boundingRadius
+		pos = GetBestCastPosition(target, Q)
+		local Tar2Ball = GetDistanceSqr(ball_pos, pos) - target.boundingRadius * target.boundingRadius
 		if Tar2Ball < (W.Radius * W.Radius) then
 			Control.CastSpell(HK_W)
 		end
@@ -589,8 +593,11 @@ combBreaker = function()
 	ER, HER = CheckEnemiesHitByR()
 	if kills >= 1 or pk >= 2 and Game.CanUseSpell(3) == 0 then
 		if Game.CanUseSpell(0) == 0 and Game.CanUseSpell(3) == 0 then
+			local n, enem = GetEnemiesinRangeCount(ball_pos, R.Radius+ Q.Radius)
+			if n >= ER then
 			pos = GetBestCircularCastPos(R, target, HER)
 			Control.CastSpell(HK_Q, pos)
+			end
 		else
 			Control.CastSpell(HK_R)
 		end
@@ -604,15 +611,18 @@ combBreaker = function()
 	local pos
 
 	if Game.CanUseSpell(0) == 0 and Saga.Combo.UseQ:Value() then
-		if GetDistance(ball_pos, target.pos) > GetDistance(hero.pos, target.pos) and Game.CanUseSpell(2) == 0 and hero then
+		if GetDistance(ball_pos, target.pos) > GetDistance(hero.pos, target.pos) + 200 and Game.CanUseSpell(2) == 0 and hero and Saga.Combo.UseE:Value() then
 			Control.CastSpell(HK_E, hero)
 		end
 		if ER == 1 then
 			pos = GetBestCastPosition(target, Q)
 			Control.CastSpell(HK_Q, pos)
 		elseif ER > 1 and Game.CanUseSpell(3)== 0 then
+			local n, enem = GetEnemiesinRangeCount(ball_pos, R.Radius+ Q.Radius)
+			if n >= ER then
 			pos = GetBestCircularCastPos(R, target, HER)
 			Control.CastSpell(HK_Q, pos)
+			end
 		else
 			pos = GetBestCastPosition(target, Q)
 			Control.CastSpell(HK_Q, pos)
@@ -717,10 +727,11 @@ CheckPotentialKills = function()
 		local unit = _EnemyHeroes[i]
 			hp = unit.health + unit.shieldAP + unit.shieldAD
 			dmg = GetComboDamage(unit)
-			if  GetDistance(unit.pos, ball_pos) <= R.Radius  and hp -GetComboDamage(unit) < 0 and hp and dmg then
+			pos = GetBestCastPosition(unit, Q)
+			if  GetDistance(pos, ball_pos) <= R.Radius  and hp -GetComboDamage(unit) < 0 and hp and dmg then
                 killable[killCounter] = unit
 				killCounter = killCounter + 1
-			elseif GetDistance(unit.pos, ball_pos) <= R.Radius and (hp - GetComboDamage(unit)) < 0.4*unit.maxHealth or (GetComboDamage(unit) >= 0.4*unit.maxHealth) and hp and dmg then
+			elseif GetDistance(pos, ball_pos) <= R.Radius and (hp - GetComboDamage(unit)) < 0.4*unit.maxHealth or (GetComboDamage(unit) >= 0.4*unit.maxHealth) and hp and dmg then
 				potential[potCounter] = unit
 				potCounter = potCounter + 1
             end
