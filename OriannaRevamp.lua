@@ -178,8 +178,7 @@ require "MapPosition"
     'Tick',
 	function()
 				uBall()
-				local kills, pk = CheckPotentialKills()
-				print(kills)
+				
 				
 				if myHero.dead or Game.IsChatOpen() == true  or IsEvading() == true then return end
 				if Saga.Combo.comboActive:Value() then
@@ -506,14 +505,16 @@ end
 	if Saga.BlockKey.rBlock:Value() and Saga.BlockKey:Value() then return CheckEnemiesHitByR() == 0; end;
 end]]--
 
- CheckEnemiesHitByR = function()
+CheckEnemiesHitByR = function()
 	local inRadius =  {}
     for i = 1, TotalHeroes do
 		local unit = _EnemyHeroes[i]
-			if  GetDistanceSqr(unit.pos, ball_pos) - unit.boundingRadius * unit.boundingRadius <= R.Radius * R.Radius then
+		if ball_pos ~= nil or unit.pos ~= nil then
+			if  GetDistance(ball_pos, unit.pos)<= R.Radius then
                 inRadius[myCounter] = unit
                 myCounter = myCounter + 1
             end
+        end
 	end
 
     myCounter = 1
@@ -559,13 +560,13 @@ combBreaker = function()
 	end
 
 	local kills, pk = CheckPotentialKills()
-	ER, HER = CheckEnemiesHitByR()
+	
 	if kills >= 1 or pk >= 2 and Game.CanUseSpell(3) == 0 then
 		if myHero.attackData.state == 2 then return end
 		Control.CastSpell(HK_R)
 	end
 
-	
+	ER, HER = CheckEnemiesHitByR()
 	if ER and ER >= Saga.Misc.RCount:Value() and Game.CanUseSpell(3) == 0 then
 		if myHero.attackData.state == 2 then return end
 		Control.CastSpell(HK_R)
