@@ -463,21 +463,7 @@ getClosestAlly = function(hero,pos)
 end
 
 
-GetEnemiesinRangeCountofR = function(target)
-	local inRadius =  {}
-    for i = 1, TotalHeroes do
-		local unit = _EnemyHeroes[i]
-		if unit.pos ~= nil and validTarget(unit) then
-			if  GetDistance(target.pos, unit.pos) <= R.Radius then
-                inRadius[myCounter] = unit
-                myCounter = myCounter + 1
-            end
-        end
-	end
 
-    myCounter = 1
-    return #inRadius, inRadius
-end
 
 GetEnemiesinRangeCount = function(target,range)
 	local inRadius =  {}
@@ -512,28 +498,7 @@ GetAlliesinRangeCount = function(range, target)
     return #inRadius, inRadius
 end
 
- CheckEnemiesHitByW = function()
-	local inRadius =  {}
-    for i = 1, TotalHeroes do
-		local unit = _EnemyHeroes[i]
-		if ball_pos ~= nil or unit.pos ~= nil and validTarget(unit) then
-			if  GetDistance(ball_pos, unit.pos)<= W.Radius then
-                inRadius[myCounter] = unit
-                myCounter = myCounter + 1
-            end
-        end
-	end
 
-    myCounter = 1
-    return #inRadius, inRadius
-end
-
-CastW = function()
-	local hitcount, hit = CheckEnemiesHitByW()
-	if hitcount >= 1 and Game.CanUseSpell(1) == 0 and Saga.Combo.UseW:Value()then
-		Control.CastSpell(HK_W)
-	end
-end
 
 --[[BlockR = function() 
 	if Saga.BlockKey.rBlock:Value() and Saga.BlockKey:Value() then return CheckEnemiesHitByR() == 0; end;
@@ -544,7 +509,7 @@ end]]--
     for i = 1, TotalHeroes do
 		local unit = _EnemyHeroes[i]
 		pos = GetBestCastPosition(unit, Q)
-			if  GetDistanceSqr(pos, ball_pos) <= R.Radius * R.Radius then
+			if  GetDistanceSqr(pos, ball_pos) - unit.boundingRadius * unit.boundingRadius <= R.Radius * R.Radius then
                 inRadius[myCounter] = unit
                 myCounter = myCounter + 1
             end
@@ -587,6 +552,7 @@ combBreaker = function()
 		pos = GetBestCastPosition(target, Q)
 		local Tar2Ball = GetDistanceSqr(ball_pos, pos) - target.boundingRadius * target.boundingRadius
 		if Tar2Ball < (W.Radius * W.Radius) then
+			if myHero.attackData.stae == 2 then return end
 			Control.CastSpell(HK_W)
 		end
 	end
@@ -594,13 +560,13 @@ combBreaker = function()
 	local kills, pk = CheckPotentialKills()
 	ER, HER = CheckEnemiesHitByR()
 	if kills >= 1 or pk >= 2 and Game.CanUseSpell(3) == 0 then
-		if Game.CanUseSpell(0) == 0 and Game.CanUseSpell(3) == 0 then
-			if Game.CanUseSpell(3) == 0 then
-			Control.CastSpell(HK_R) end 
-		end
+		if myHero.attackData.stae == 2 then return end
+		Control.CastSpell(HK_R)
 	end
+
 	
 	if ER and ER >= Saga.Misc.RCount:Value() and Game.CanUseSpell(3) == 0 then
+		if myHero.attackData.stae == 2 then return end
 		Control.CastSpell(HK_R)
 	end
 
@@ -610,6 +576,7 @@ combBreaker = function()
 	local pos
 
 	if GetDistance(ball_pos, target.pos) > GetDistance(hero.pos, target.pos) + 200 and Game.CanUseSpell(2) == 0 and hero and Saga.Combo.UseE:Value() then
+		if myHero.attackData.stae == 2 then return end
 		Control.CastSpell(HK_E, hero)
 	end
 	if Game.CanUseSpell(0) == 0 then
@@ -623,6 +590,7 @@ combBreaker = function()
 		if Dist > (Q.Range*Q.Range) then
 			pos = myHero.pos + (pos - myHero.pos):Normalized()*Q.Range
 		end
+		if myHero.attackData.stae == 2 then return end
 		Control.CastSpell(HK_Q, pos)
 	end
 
@@ -664,7 +632,7 @@ end
 			
 		end
 	end
-	
+
 	ValidTargetM = function(target, range)
 		range = range and range or math.huge
 		return target ~= nil and target.valid and target.visible and not target.dead and target.distance <= range
@@ -727,30 +695,26 @@ end
 		end
 	end
 
-CheckPotentialKills = function() 
-	local killable =  {}
-	local potential =  {}
-	local hp
-	local dmg 
-
-    for i = 1, TotalHeroes do
-		local unit = _EnemyHeroes[i]
-			hp = unit.health + unit.shieldAP + unit.shieldAD
-			dmg = GetComboDamage(unit)
-			pos = GetBestCastPosition(unit, Q)
-			if  GetDistance(pos, ball_pos) <= R.Radius  and hp -GetComboDamage(unit) < 0 and hp and dmg then
-                killable[killCounter] = unit
-				killCounter = killCounter + 1
-			elseif GetDistance(pos, ball_pos) <= R.Radius and (hp - GetComboDamage(unit)) < 0.4*unit.maxHealth or (GetComboDamage(unit) >= 0.4*unit.maxHealth) and hp and dmg then
-				potential[potCounter] = unit
-				potCounter = potCounter + 1
-            end
-        
+	CheckPotentialKills = function() 
+		local killable =  {}
+		local potential =  {}
+		for i = 1, TotalHeroes do
+			local unit = _EnemyHeroes[i]
+			if ball_pos ~= nil or unit.pos ~= nil and validTarget(unit) then
+				if  GetDistance(ball_pos, unit.pos)<= R.Radius and unit.health -GetComboDamage(unit) < 0  and validTarget(unit) then
+					killable[killCounter] = unit
+					killCounter = killCounter + 1
+				elseif GetDistance(ball_pos, unit.pos)<= R.Radius and (unit.health - GetComboDamage(unit)) < 0.4*unit.maxHealth or (GetComboDamage(unit) >= 0.4*unit.maxHealth) and validTarget(unit) then
+					potential[potCounter] = unit
+					potCounter = potCounter + 1
+				end
+			end
+		end
+			killCounter = 1
+			potCounter = 1
+		return #killable, #potential
 	end
-		killCounter = 1
-		potCounter = 1
-    return #killable, #potential
-end
+	
  VectorPointProjectionOnLineSegment = function(v1, v2, v)
 	local cx, cy, ax, ay, bx, by = v.x, v.z, v1.x, v1.z, v2.x, v2.z
 	local rL = ((cx - ax) * (bx - ax) + (cy - ay) * (by - ay)) / ((bx - ax) * (bx - ax) + (by - ay) * (by - ay))
