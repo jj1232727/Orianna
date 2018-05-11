@@ -1,4 +1,4 @@
---if myHero.CharName ~= 'Orianna' then return end
+if myHero.charName ~= 'Orianna' then return end
 
 require "DamageLib"
 require "MapPosition"
@@ -695,7 +695,7 @@ end
 		end
 	end
 
-	CheckPotentialKills = function() 
+	CheckPotentialKills = function()
 		local killable =  {}
 		local potential =  {}
 		for i = 1, TotalHeroes do
@@ -714,7 +714,7 @@ end
 			potCounter = 1
 		return #killable, #potential
 	end
-	
+
  VectorPointProjectionOnLineSegment = function(v1, v2, v)
 	local cx, cy, ax, ay, bx, by = v.x, v.z, v1.x, v1.z, v2.x, v2.z
 	local rL = ((cx - ax) * (bx - ax) + (cy - ay) * (by - ay)) / ((bx - ax) * (bx - ax) + (by - ay) * (by - ay))
