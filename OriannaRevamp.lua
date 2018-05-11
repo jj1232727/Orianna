@@ -558,12 +558,15 @@ combBreaker = function()
 			Control.CastSpell(HK_W)
 		end
 	end
-
-	local kills, pk = CheckPotentialKills()
+	ER, HER = CheckEnemiesHitByR()
 	
+	
+	if ER > 0 then
+	local kills, pk = CheckPotentialKills(HER)
 	if kills >= 1 or pk >= 2 and Game.CanUseSpell(3) == 0 then
 		if myHero.attackData.state == 2 then return end
 		Control.CastSpell(HK_R)
+	end
 	end
 
 	ER, HER = CheckEnemiesHitByR()
@@ -697,16 +700,16 @@ end
 		end
 	end
 
-	CheckPotentialKills = function()
+	CheckPotentialKills = function(lst)
 		local killable =  {}
 		local potential =  {}
-		for i = 1, TotalHeroes do
-			local unit = _EnemyHeroes[i]
+		for i = 1, #lst do
+			local unit = lst[i]
 			if ball_pos ~= nil or unit.pos ~= nil and validTarget(unit) then
-				if  GetDistance(ball_pos, unit.pos)<= R.Radius and unit.health -GetComboDamage(unit) < 0  and validTarget(unit) then
+				if  GetDistance(ball_pos, unit.pos)<= R.Radius and unit.health -GetComboDamage(unit) < 0  then
 					killable[killCounter] = unit
 					killCounter = killCounter + 1
-				elseif GetDistance(ball_pos, unit.pos)<= R.Radius and (unit.health - GetComboDamage(unit)) < 0.4*unit.maxHealth or (GetComboDamage(unit) >= 0.4*unit.maxHealth) and validTarget(unit) then
+				elseif GetDistance(ball_pos, unit.pos)<= R.Radius and (unit.health - GetComboDamage(unit)) < 0.3*unit.maxHealth or (GetComboDamage(unit) >= 0.3*unit.maxHealth) then
 					potential[potCounter] = unit
 					potCounter = potCounter + 1
 				end
