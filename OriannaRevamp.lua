@@ -178,6 +178,8 @@ require "MapPosition"
     'Tick',
 	function()
 				uBall()
+				local kills, pk = CheckPotentialKills()
+				print(kills)
 				
 				if myHero.dead or Game.IsChatOpen() == true  or IsEvading() == true then return end
 				if Saga.Combo.comboActive:Value() then
@@ -508,8 +510,7 @@ end]]--
 	local inRadius =  {}
     for i = 1, TotalHeroes do
 		local unit = _EnemyHeroes[i]
-		pos = GetBestCastPosition(unit, Q)
-			if  GetDistanceSqr(pos, ball_pos) - unit.boundingRadius * unit.boundingRadius <= R.Radius * R.Radius then
+			if  GetDistanceSqr(unit.pos, ball_pos) - unit.boundingRadius * unit.boundingRadius <= R.Radius * R.Radius then
                 inRadius[myCounter] = unit
                 myCounter = myCounter + 1
             end
@@ -551,8 +552,8 @@ combBreaker = function()
 	if Saga.Combo.UseW:Value() and Game.CanUseSpell(1) == 0 then
 		pos = GetBestCastPosition(target, Q)
 		local Tar2Ball = GetDistanceSqr(ball_pos, pos) - target.boundingRadius * target.boundingRadius
-		if Tar2Ball < (W.Radius * W.Radius) then
-			if myHero.attackData.stae == 2 then return end
+		if Tar2Ball < (W.Radius * W.Radius) and Game.CanUseSpell(1) == 0 then
+			if myHero.attackData.state == 2 then return end
 			Control.CastSpell(HK_W)
 		end
 	end
@@ -560,13 +561,13 @@ combBreaker = function()
 	local kills, pk = CheckPotentialKills()
 	ER, HER = CheckEnemiesHitByR()
 	if kills >= 1 or pk >= 2 and Game.CanUseSpell(3) == 0 then
-		if myHero.attackData.stae == 2 then return end
+		if myHero.attackData.state == 2 then return end
 		Control.CastSpell(HK_R)
 	end
 
 	
 	if ER and ER >= Saga.Misc.RCount:Value() and Game.CanUseSpell(3) == 0 then
-		if myHero.attackData.stae == 2 then return end
+		if myHero.attackData.state == 2 then return end
 		Control.CastSpell(HK_R)
 	end
 
@@ -576,7 +577,7 @@ combBreaker = function()
 	local pos
 
 	if GetDistance(ball_pos, target.pos) > GetDistance(hero.pos, target.pos) + 200 and Game.CanUseSpell(2) == 0 and hero and Saga.Combo.UseE:Value() then
-		if myHero.attackData.stae == 2 then return end
+		if myHero.attackData.state == 2 then return end
 		Control.CastSpell(HK_E, hero)
 	end
 	if Game.CanUseSpell(0) == 0 then
@@ -590,7 +591,7 @@ combBreaker = function()
 		if Dist > (Q.Range*Q.Range) then
 			pos = myHero.pos + (pos - myHero.pos):Normalized()*Q.Range
 		end
-		if myHero.attackData.stae == 2 then return end
+		if myHero.attackData.state == 2 then return end
 		Control.CastSpell(HK_Q, pos)
 	end
 
