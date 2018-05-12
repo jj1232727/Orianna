@@ -10,7 +10,7 @@ require "MapPosition"
 	local Q = {Range = 825, Width = 40, Delay = 0.40 + ping, Speed = 1400, Collision = false, aoe = false, Type = "circular", Scale = .5, Radius = 175, From = myHero}
 	local W = {Delay = 0.25 + ping, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 250, Scale = .7, From = myHero, Range = 825}
 	local E = {Range = 1100, Width = 40, Delay = 0.25 + ping, Speed = 1700, Collision = false, aoe = false, Type = "line", Scale = .3, From = myHero}
-	local R = {Delay = 0.6 + ping, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 325, Scale = .70, From = myHero, Range = 825}
+	local R = {Delay = 0.6 + ping, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 310, Scale = .70, From = myHero, Range = 825}
 	local R2 = {Delay = 0.6, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = R.Radius+Q.Radius, Scale = .70, From = myHero, Range = 825}
 	local Qdamage = {60, 90, 120, 150, 180}
 	local Wdamage = {60, 105, 150, 195, 240}
@@ -509,7 +509,7 @@ CheckEnemiesHitByR = function()
 	local inRadius =  {}
     for i = 1, TotalHeroes do
 		local unit = _EnemyHeroes[i]
-		if ball_pos ~= nil or unit.pos ~= nil then
+		if ball_pos ~= nil or unit.pos ~= nil and validTarget(unit) then
 			if  GetDistance(ball_pos, unit.pos)<= R.Radius then
                 inRadius[myCounter] = unit
                 myCounter = myCounter + 1
@@ -561,16 +561,18 @@ combBreaker = function()
 	ER, HER = CheckEnemiesHitByR()
 	
 	
-	if ER > 0 then
+	if ER > 0 and Saga.Combo.UseR:Value() then
+	print(Saga.Combo.UseR:Value())
 	local kills, pk = CheckPotentialKills(HER)
-	if kills >= 1 or pk >= 2 and Game.CanUseSpell(3) == 0 then
+	if kills >= Saga.Misc.RCountkills:Value() or pk >= Saga.Misc.RCountpot:Value() and Game.CanUseSpell(3) == 0 then
 		if myHero.attackData.state == 2 then return end
-		Control.CastSpell(HK_R)
+		if Game.CanUseSpell(3) == 0 then 
+		Control.CastSpell(HK_R) end
 	end
 	end
 
 	ER, HER = CheckEnemiesHitByR()
-	if ER and ER >= Saga.Misc.RCount:Value() and Game.CanUseSpell(3) == 0 then
+	if ER and ER >= Saga.Misc.RCount:Value() and Game.CanUseSpell(3) == 0 and Saga.Combo.UseR:Value() then
 		if myHero.attackData.state == 2 then return end
 		Control.CastSpell(HK_R)
 	end
@@ -595,7 +597,6 @@ combBreaker = function()
 		if Dist > (Q.Range*Q.Range) then
 			pos = myHero.pos + (pos - myHero.pos):Normalized()*Q.Range
 		end
-		if myHero.attackData.state == 2 then return end
 		Control.CastSpell(HK_Q, pos)
 	end
 
@@ -613,13 +614,14 @@ end
 		target = findEmemy(Q.Range)
 		if target and validTarget(target) then 
 			
-			if Saga.Combo.UseW:Value() and Game.CanUseSpell(1) == 0 then
+			if Saga.Harass.UseW:Value() and Game.CanUseSpell(1) == 0 then
 				pos = GetBestCastPosition(target, Q)
 				local Tar2Ball = GetDistanceSqr(ball_pos, pos) - target.boundingRadius * target.boundingRadius
 				if Tar2Ball < (W.Radius * W.Radius) then
 					Control.CastSpell(HK_W)
 				end
 			end
+			local ER, HER = CheckEnemiesHitByR()
 			
 		if Game.CanUseSpell(0) == 0 then
 			pos = GetBestCircularCastPos(W, target, HER)
@@ -709,7 +711,7 @@ end
 				if  GetDistance(ball_pos, unit.pos)<= R.Radius and unit.health -GetComboDamage(unit) < 0  then
 					killable[killCounter] = unit
 					killCounter = killCounter + 1
-				elseif GetDistance(ball_pos, unit.pos)<= R.Radius and (unit.health - GetComboDamage(unit)) < 0.3*unit.maxHealth or (GetComboDamage(unit) >= 0.3*unit.maxHealth) then
+				elseif GetDistance(ball_pos, unit.pos)<= R.Radius and (unit.health - GetComboDamage(unit)) < Saga.Misc.RCountpotpercent:Value()*unit.maxHealth or (GetComboDamage(unit) >= 0.3*unit.maxHealth) then
 					potential[potCounter] = unit
 					potCounter = potCounter + 1
 				end
@@ -1082,6 +1084,7 @@ function()
 	Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
 	Saga.Combo:MenuElement({id = "UseW", name = "W", value = true})
 	Saga.Combo:MenuElement({id = "UseE", name = "E", value = true})
+	Saga.Combo:MenuElement({id = "UseR", name = "R", value = true})
 	Saga.Combo:MenuElement({id = "comboActive", name = "Combo key", key = string.byte(" ")})
 
 	Saga:MenuElement({id = "Harass", name = "Harass", type = MENU})
@@ -1105,7 +1108,10 @@ function()
 
 	Saga:MenuElement({id = "Misc", name = "R Settings", type = MENU})
 	Saga.Misc:MenuElement({id = "UseR", name = "R", value = true})
-	Saga.Misc:MenuElement({id = "RCount", name = "Use R on X targets", value = 2, min = 1, max = 5, step = 1})
+	Saga.Misc:MenuElement({id = "RCount", name = "Use R on X targets", value = 3, min = 1, max = 5, step = 1})
+	Saga.Misc:MenuElement({id = "RCountkills", name = "Use R on X targets: Gaurantee Kills", value = 1, min = 1, max = 5, step = 1})
+	Saga.Misc:MenuElement({id = "RCountpot", name = "Use R on X targets: Potential Kills", value = 2, min = 1, max = 5, step = 1})
+	Saga.Misc:MenuElement({id = "RCountpotpercent", name = "Min Health for potential kill", value = .3, min = .1, max = 1, step = .1, tooltip = "Recommend .3"})
 
 	Saga:MenuElement({id = "Drawings", name = "Drawings", type = MENU})
 	Saga.Drawings:MenuElement({id = "Q", name = "Draw Q range", type = MENU})
