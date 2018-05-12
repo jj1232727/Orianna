@@ -562,7 +562,6 @@ combBreaker = function()
 	
 	
 	if ER > 0 and Saga.Combo.UseR:Value() then
-	print(Saga.Combo.UseR:Value())
 	local kills, pk = CheckPotentialKills(HER)
 	if kills >= Saga.Misc.RCountkills:Value() or pk >= Saga.Misc.RCountpot:Value() and Game.CanUseSpell(3) == 0 then
 		if myHero.attackData.state == 2 then return end
@@ -1078,7 +1077,8 @@ end
 
 Saga_Menu =
 function()
-	Saga = MenuElement({type = MENU, id = "Orianna", name = "Saga's AIO Orianna", icon = AIOIcon})
+	Saga = MenuElement({type = MENU, id = "Orianna", name = "Saga's Orianna: Balls of Fury", icon = AIOIcon})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
