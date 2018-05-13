@@ -585,7 +585,7 @@ combBreaker = function()
 		if myHero.attackData.state == 2 then return end
 		Control.CastSpell(HK_E, hero)
 	end
-	if Game.CanUseSpell(0) == 0 then
+	if Game.CanUseSpell(0) == 0 and Saga.Combo.UseW:Value() then
 		pos = GetBestCircularCastPos(W, target, HER)
 		if Game.CanUseSpell(3) == 0 then
 		pos = GetBestCircularCastPos(R, target, HER)
