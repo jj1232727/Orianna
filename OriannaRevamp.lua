@@ -551,10 +551,10 @@ combBreaker = function()
 	local dmg = GetComboDamage(target)
 
 	if Saga.Combo.UseW:Value() and Game.CanUseSpell(1) == 0 then
-		pos = GetBestCastPosition(target, Q)
-		local Tar2Ball = GetDistanceSqr(ball_pos, pos) - target.boundingRadius * target.boundingRadius
+		--pos = GetBestCastPosition(target, Q)
+		local Tar2Ball = GetDistanceSqr(ball_pos, target.pos) - target.boundingRadius * target.boundingRadius
 		if Tar2Ball < (W.Radius * W.Radius) and Game.CanUseSpell(1) == 0 then
-			if myHero.attackData.state == 2 then return end
+			
 			Control.CastSpell(HK_W)
 		end
 	end
@@ -564,7 +564,6 @@ combBreaker = function()
 	if ER > 0 and Saga.Combo.UseR:Value() then
 	local kills, pk = CheckPotentialKills(HER)
 	if kills >= Saga.Misc.RCountkills:Value() or pk >= Saga.Misc.RCountpot:Value() and Game.CanUseSpell(3) == 0 then
-		if myHero.attackData.state == 2 then return end
 		if Game.CanUseSpell(3) == 0 then 
 		Control.CastSpell(HK_R) end
 	end
@@ -572,7 +571,6 @@ combBreaker = function()
 
 	ER, HER = CheckEnemiesHitByR()
 	if ER and ER >= Saga.Misc.RCount:Value() and Game.CanUseSpell(3) == 0 and Saga.Combo.UseR:Value() then
-		if myHero.attackData.state == 2 then return end
 		Control.CastSpell(HK_R)
 	end
 
@@ -582,7 +580,6 @@ combBreaker = function()
 	local pos
 
 	if GetDistance(ball_pos, target.pos) > GetDistance(hero.pos, target.pos) + 200 and Game.CanUseSpell(2) == 0 and hero and Saga.Combo.UseE:Value() then
-		if myHero.attackData.state == 2 then return end
 		Control.CastSpell(HK_E, hero)
 	end
 	if Game.CanUseSpell(0) == 0 and Saga.Combo.UseW:Value() then
@@ -1078,7 +1075,7 @@ end
 Saga_Menu =
 function()
 	Saga = MenuElement({type = MENU, id = "Orianna", name = "Saga's Orianna: Balls of Fury", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5.1"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
