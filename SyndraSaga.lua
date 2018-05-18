@@ -11,8 +11,8 @@ Latency = Game.Latency
     local HeroBalls = Game.Hero
     local smallshits = Game.MinionCount
     local littleshit = Game.Minion
-    local shitaround = Game.ObjectCount
-    local shit = Game.Object
+    local shitaround = Game.MissileCount
+    local shit = Game.Missile
     local cock = os.clock
 	local SagaIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
 	local Q = {Range = 800, Width = 50, Delay = 0.6 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 150, From = PurpleBallBitch}
@@ -711,7 +711,7 @@ ballsearch = function()
 	for i = 1, shitaround() do
 		local object = shit(i)
 		if object and object.valid then
-			if object.charName:lower() == "syndrasphere" and object.pos:DistanceTo() < W.Range then
+			if object.charName:lower() == "syndraqspell" and object.pos:DistanceTo() < W.Range then
                 ball = object
                 ballpos = object.pos
 			end
@@ -1078,7 +1078,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Syndra", name = "Saga's Syndra: Big Purple Balls", icon = SagaIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.1.1"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.0.0"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
