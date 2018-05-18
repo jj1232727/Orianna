@@ -32,7 +32,7 @@ Latency = Game.Latency
     local TotalHeroes
     local TEAM_ALLY = PurpleBallBitch.team
     local TEAM_ENEMY = 300 - TEAM_ALLY
-    local bitchList = {"Annie", "Malzahar", "Zyra"}
+    local bitchList = {"Annie", "Malzahar", "Zyra", "Ivern", "Kalista", "Yorick", "Heimerdinger"}
     local myCounter = 1
     local IDListNumber
     local rDMG
