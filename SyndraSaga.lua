@@ -46,6 +46,8 @@ Latency = Game.Latency
     local isEvading = ExtLibEvade and ExtLibEvade.Evading
     local Tard_RangeCount = 0 -- <3 yaddle
     local ball_counter = 0
+    local hpredTick = 0
+    local _movementHistory = {}
     
     
     --WR PREDICTION USAGE ---
@@ -408,6 +410,11 @@ LocalCallbackAdd(
                 LastHitMode()
             end
             UpdateDamage()
+
+            if  cock() - hpredTick > 10 then
+                UpdateMovementHistory()
+            end
+            hpredTick = cock()
         end)
 
         LocalCallbackAdd(
@@ -491,14 +498,15 @@ local targetQ = findEmemy(Q.Range)
                     local bitch, bitchpos = findPet() end
                     if bitch and PurpleBallBitch:GetSpellData(_W).toggleState ~= 2 then
                         CastSpell(HK_W, bitchpos, W.Range, W.Delay*1000)
-                    elseif not bitch and thesenuts then
+                    elseif not bitch and #thesenuts ~= 0 then
                         for i = 1, #thesenuts do 
                             local ballQ = thesenuts[i]
                             if ballQ and ballQ:DistanceTo() < W.Range then
-                                CastSpell(HK_W, ballQ,W.Range, W.Delay*1000) 
+                                CastSpell(HK_W, ballQ,W.Range, W.Delay*1000)
+                                break
                             end
                             end
-                    elseif not bitch and not bigblackballs then
+                    elseif not bitch and #thesenuts == 0 then
                         local minionb, minionposb = findMinion()
                         if not minionb then return end
                         CastSpell(HK_W, minionposb, W.Range, W.Delay*1000)
@@ -582,6 +590,7 @@ HarassMode = function()
                     CastSpell(HK_Q, Qpos, Q.Range, Q.Delay*1000) end 
                     end
                 end
+                
      local targetW = findEmemy(W.Range)
         if targetW then
             if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 1 and Saga.Harass.UseW:Value() then
@@ -590,11 +599,13 @@ HarassMode = function()
                     
                     if bitch then
                         CastSpell(HK_W, bitchpos, W.Range, W.Delay*1000)
+                        
                     elseif not bitch and thesenuts then
                         for i = 1, #thesenuts do 
                             local ballQ = thesenuts[i]
                             if ballQ and ballQ:DistanceTo() < W.Range then
-                                CastSpell(HK_W, ballQ,W.Range, W.Delay*1000) 
+                                CastSpell(HK_W, ballQ,W.Range, W.Delay*1000)
+                                
                             end
                             end
                     elseif not bitch and not bigblackballs then
@@ -964,6 +975,10 @@ GetBestCastPosition = function (unit, spell)
 	else
 		Position, CastPosition = CalculateTargetPosition(unit, spell)
 
+        if _movementHistory and _movementHistory[unit.charName] and Timer() - _movementHistory[unit.charName]['ChangedAt'] < .25 then
+            HitChance = 2
+        end
+
 		if unit.activeSpell and unit.activeSpell.valid then
 			HitChance = 2
 		end
@@ -1084,7 +1099,33 @@ GetBestLinearCastPos = function(spell, sTar, list)
 	return endPos, MostHit
 end
 
+UpdateMovementHistory =
+    function()
+    for i = 1, TotalHeroes do
+        local unit = HeroBalls(i)
+        if not _movementHistory[unit.charName] then
+            _movementHistory[unit.charName] = {}
+            _movementHistory[unit.charName]['EndPos'] = unit.pathing.endPos
+            _movementHistory[unit.charName]['StartPos'] = unit.pathing.endPos
+            _movementHistory[unit.charName]['PreviousAngle'] = 0
+            _movementHistory[unit.charName]['ChangedAt'] = Timer()
+        end
 
+        if
+            _movementHistory[unit.charName]['EndPos'].x ~= unit.pathing.endPos.x or _movementHistory[unit.charName]['EndPos'].y ~= unit.pathing.endPos.y or
+                _movementHistory[unit.charName]['EndPos'].z ~= unit.pathing.endPos.z
+         then
+            _movementHistory[unit.charName]['PreviousAngle'] =
+                Angle(
+                Vector(_movementHistory[unit.charName]['StartPos'].x, _movementHistory[unit.charName]['StartPos'].y, _movementHistory[unit.charName]['StartPos'].z),
+                Vector(_movementHistory[unit.charName]['EndPos'].x, _movementHistory[unit.charName]['EndPos'].y, _movementHistory[unit.charName]['EndPos'].z)
+            )
+            _movementHistory[unit.charName]['EndPos'] = unit.pathing.endPos
+            _movementHistory[unit.charName]['StartPos'] = unit.pos
+            _movementHistory[unit.charName]['ChangedAt'] = Timer()
+        end
+    end
+end
 
 UpdateDamage = function()
     if cock() - Tard_RangeCount >  1 then
@@ -1099,7 +1140,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Syndra", name = "Saga's Syndra: Big Purple Balls", icon = SagaIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.1.1"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.2.3"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
