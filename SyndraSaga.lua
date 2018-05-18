@@ -11,8 +11,8 @@ Latency = Game.Latency
     local HeroBalls = Game.Hero
     local smallshits = Game.MinionCount
     local littleshit = Game.Minion
-    local shitaround = Game.MissileCount
-    local shit = Game.Missile
+    local shitaround = Game.ObjectCount
+    local shit = Game.Object
     local cock = os.clock
 	local SagaIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
 	local Q = {Range = 800, Width = 50, Delay = 0.6 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 150, From = PurpleBallBitch}
@@ -27,6 +27,7 @@ Latency = Game.Latency
     local LocalCallbackAdd = Callback.Add
     local IDList = {}
     local bitch, bitchpos
+    local thesenuts
     local _EnemyHeroes
     local _OnVision = {}
     local TotalHeroes
@@ -43,6 +44,7 @@ Latency = Game.Latency
     local qDMG
     local eBola
     local Tard_RangeCount = 0 -- <3 yaddle
+    local ball_counter = 0
     
     
     --WR PREDICTION USAGE ---
@@ -382,6 +384,12 @@ LocalCallbackAdd(
     function()
             OnVisionF()
             
+
+            if ball_counter + 500 < GetTickCount() then
+                ballsearch()
+            end
+
+
             if Saga.Auto.useAutoQ:Value() then
                 AutoQ()
             end
@@ -447,12 +455,31 @@ Combo = function()
                             rDMG = (finaldamage + ap ) * balls
 
                     local totalrDMG = CalcMagicalDamage(PurpleBallBitch, targetR, rDMG)
-                    --print(totalrDMG, " Health----", targetR.health)
+                    
                     if totalrDMG > (targetR.health + targetR.shieldAD + targetR.shieldAP) and targetR.pos:DistanceTo() < R.Range and Saga.KillSteal.rKS[targetR.charName]:Value() then
                         CastSpell(HK_R, targetR)
                     end
                 end
                 end
+
+                -----------------------------------------------Q USAGE---------------------------------------------
+                
+
+local targetQ = findEmemy(Q.Range)
+    if targetQ then
+        if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and targetQ.pos:DistanceTo() < Q.Range and itsReadyBitch(2) ~= 0 and Saga.Combo.UseQ:Value() then 
+            local Qpos = GetBestCastPosition(targetQ, Q)
+            if Qpos:DistanceTo() > Q.Range then 
+                Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*Q.Range
+                end
+            Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*(GetDistance(Qpos, PurpleBallBitch.pos) + 0.4*targetQ.boundingRadius)
+            if Qpos:To2D().onScreen then
+                CastSpell(HK_Q, Qpos, Q.Range, Q.Delay*1000) 
+            else
+                CastSpellMM(HK_Q, Qpos, Q.Range, Q.Delay*1000)
+            end
+          end
+    end 
 
 -----------------------------------------W Usage-----------------------------------------------                
 
@@ -461,16 +488,17 @@ Combo = function()
                 if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 1 and Saga.Combo.UseW:Value()then
                     if IDList then 
                     local bitch, bitchpos = findPet() end
-                    local bigblackballs, ballposition = ballsearch()
                     if bitch and PurpleBallBitch:GetSpellData(_W).toggleState ~= 2 then
                         CastSpell(HK_W, bitchpos, W.Range, W.Delay*1000)
-                    elseif not bitch and bigblackballs then
-                        
-                        CastSpell(HK_W, ballposition,W.Range, W.Delay*1000)
-                        ball_Counter = cock()
-                        
+                    elseif not bitch and thesenuts then
+                        for i = 1, #thesenuts do 
+                            local ballQ = thesenuts[i]
+                            if ballQ and ballQ:DistanceTo() < W.Range then
+                                CastSpell(HK_W, ballQ,W.Range, W.Delay*1000) 
+                            end
+                            end
                     elseif not bitch and not bigblackballs then
-                        minionb, minionposb = findMinion()
+                        local minionb, minionposb = findMinion()
                         if not minionb then return end
                         CastSpell(HK_W, minionposb, W.Range, W.Delay*1000)
                     end
@@ -490,24 +518,7 @@ Combo = function()
             end
         end 
 
------------------------------------------------Q USAGE---------------------------------------------
-                
 
-                local targetQ = findEmemy(Q.Range)
-                if targetQ then
-                    if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and targetQ.pos:DistanceTo() < Q.Range and itsReadyBitch(2) ~= 0 and Saga.Combo.UseQ:Value() then 
-                    local Qpos = GetBestCastPosition(targetQ, Q)
-                    if Qpos:DistanceTo() > Q.Range then 
-                    Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*Q.Range
-                    end
-                    Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*(GetDistance(Qpos, PurpleBallBitch.pos) + 0.5*targetQ.boundingRadius)
-                    if Qpos:To2D().onScreen then
-                        CastSpell(HK_Q, Qpos, Q.Range, Q.Delay*1000) 
-                    else
-                        CastSpellMM(HK_Q, Qpos, Q.Range, Q.Delay*1000)
-                    end
-                    end
-                end 
 
 ---------------------------------QE Usage------------------------------------------------------------------
                 local target = findEmemy(1100)
@@ -575,12 +586,16 @@ HarassMode = function()
             if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 1 and Saga.Harass.UseW:Value() then
                 if IDList then 
                     local bitch, bitchpos = findPet() end
-                    local bigblackballs, ballposition = ballsearch()
                     
                     if bitch then
                         CastSpell(HK_W, bitchpos, W.Range, W.Delay*1000)
-                    elseif not bitch and bigblackballs then
-                        CastSpell(HK_W, ballposition,W.Range, W.Delay*1000)
+                    elseif not bitch and thesenuts then
+                        for i = 1, #thesenuts do 
+                            local ballQ = thesenuts[i]
+                            if ballQ and ballQ:DistanceTo() < W.Range then
+                                CastSpell(HK_W, ballQ,W.Range, W.Delay*1000) 
+                            end
+                            end
                     elseif not bitch and not bigblackballs then
                         
                         local minion, minionpos = findMinion()
@@ -592,10 +607,10 @@ HarassMode = function()
         local targetW2 =findEmemy(W.Range)
         local WPos = GetBestCastPosition(targetW2, W)
             if WPos:DistanceTo() > W.Range then 
-                    WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*Q.Range
+                    WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*W.Range
              end
                     WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*(GetDistance(WPos, PurpleBallBitch.pos) + 0.5*targetW.boundingRadius)
-                    if WPos:To2D().onScreen() then
+                    if WPos:To2D().onScreen then
                         CastSpell(HK_W, WPos, W.Range, W.Delay*1000)
                     else
                         CastSpellMM(HK_W, WPos, W.Range, W.Delay*1000)
@@ -640,11 +655,14 @@ ClearJungle = function()
                         Control.CastSpell(HK_Q,minion.pos)
                     end
                     
-                    if minion.valid and minion.isEnemy and minion.pos:DistanceTo(myHero.pos) < 825 and Game.CanUseSpell(1) == 0 and not minion.dead and PurpleBallBitch:GetSpellData(_W).toggleState == 1 and minion.visible then
-                    local bigblackballs, ballposition = ballsearch()
-                        if bigblackballs then 
-                            CastSpell(HK_W, ballposition,W.Range, W.Delay*1000)
+                    if minion.valid and minion.isEnemy and minion.pos:DistanceTo(myHero.pos) < 825 and Game.CanUseSpell(1) == 0 and not minion.dead and PurpleBallBitch:GetSpellData(_W).toggleState == 1 and minion.visible and thesenuts then
+                    for k = 1, #thesenuts do
+                        local thisnut = thesenuts[k]
+                        if thisnut and thisnut:DistanceTo() < W.Range then 
+                        CastSpell(HK_W, thisnut ,W.Range, W.Delay*1000)
                         end
+                    end
+                        
                     end
 
                 if minion.valid and minion.isEnemy and minion.pos:DistanceTo(myHero.pos) < 825 and Game.CanUseSpell(1) == 0 and not minion.dead and PurpleBallBitch:GetSpellData(_W).toggleState == 2 and minion.visible then
@@ -707,18 +725,20 @@ findPet = function()
 end
 
 ballsearch = function()
-    local ball
-    local ballpos
+    local thesenutties = {}
+    if ball_counter + 50 > GetTickCount() then return end
 	for i = 1, shitaround() do
-		local object = shit(i)
-		if object and object.valid then
-			if object.charName:lower() == "syndraqspell" and object.pos:DistanceTo() < W.Range then
-                ball = object
-                ballpos = object.pos
+        local object = shit(i)
+		if object and object.valid and not object.dead and object.visible then
+			if object.charName:lower() == "syndrasphere" and not table.contains(thesenutties, object.pos) then
+                thesenutties[myCounter] = object.pos
+                myCounter = myCounter + 1
 			end
 		end
-	end
-    return ball, ballpos
+    end
+    myCounter = 1
+    thesenuts = thesenutties
+    ball_counter = GetTickCount()
 end
 
 VectorPointProjectionOnLineSegment = function(v1, v2, v)
@@ -732,12 +752,12 @@ VectorPointProjectionOnLineSegment = function(v1, v2, v)
 end 
 
 eBola = function(target, me)
-    for i = shitaround(), 1, -1 do 
-        local ball = shit(i)
-        if  target and ball and ball.visible and not ball.dead and ball.charName:lower() == "syndraqspell" and ball.pos:DistanceTo() < 700 and PurpleBallBitch.attackData.state ~= 2 then
+    for i = 1, #thesenuts do 
+        local ball = thesenuts[i]
+        if target and ball and ball:DistanceTo() < 700 and PurpleBallBitch.attackData.state ~= 2 then
             local posE, posEC, hitchance = GetBestCastPosition(target, E)
-            local linesegment, line, isOnSegment = VectorPointProjectionOnLineSegment(me, posE, ball.pos)
-            if linesegment and isOnSegment and (GetDistanceSqr(ball.pos, linesegment) <= (ball.boundingRadius + Q.Width) * (ball.boundingRadius + Q.Width)) and itsReadyBitch(2) == 0 and target.pos:DistanceTo() < E.Range then
+            local linesegment, line, isOnSegment = VectorPointProjectionOnLineSegment(me, posE, ball)
+            if linesegment and isOnSegment and (GetDistanceSqr(ball, linesegment) <= Q.Width * Q.Width) and itsReadyBitch(2) == 0 and target.pos:DistanceTo() < E.Range then
                 CastSpell(HK_E, posE, E.Range, E.Delay*1000)
             end
         end
@@ -1078,7 +1098,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Syndra", name = "Saga's Syndra: Big Purple Balls", icon = SagaIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.0.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.1.1"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
