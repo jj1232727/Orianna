@@ -379,6 +379,9 @@ LocalCallbackAdd(
     'Tick',
     function()
             OnVisionF()
+            if Saga.Auto.useAutoQ:Value() then
+                AutoQ()
+            end
             if Saga.Combo.comboActive:Value() and PurpleBallBitch.attackData.state ~= 2 then
                 Combo()
             end
@@ -397,8 +400,11 @@ LocalCallbackAdd(
 
         LocalCallbackAdd(
     'Draw', function()
-        Draw.Circle(PurpleBallBitch.pos, Q.Range, 0, Draw.Color(200, 255, 87, 51)) 
-        Draw.Circle(PurpleBallBitch.pos, E.Range, 0, Draw.Color(200, 255, 87, 51))
+        if Saga.Drawings.Q.Enabled:Value() then Draw.Circle(PurpleBallBitch.pos, Q.Range, 0, Saga.Drawings.Q.Color:Value()) end
+        if Saga.Drawings.W.Enabled:Value() then Draw.Circle(PurpleBallBitch.pos, W.Range, 0, Saga.Drawings.W.Color:Value()) end
+        if Saga.Drawings.E.Enabled:Value() then Draw.Circle(PurpleBallBitch.pos, E.Range, 0, Saga.Drawings.E.Color:Value()) end
+        if Saga.Drawings.R.Enabled:Value() then Draw.Circle(PurpleBallBitch.pos, R.Range, 0, Saga.Drawings.R.Color:Value()) end
+        
     end)
 
     validTarget = function(unit)
@@ -410,7 +416,23 @@ LocalCallbackAdd(
         end
     end    
 
-
+AutoQ = function()
+    local targetQ = findEmemy(Q.Range)
+                if targetQ then
+                    if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and targetQ.pos:DistanceTo() < Q.Range then 
+                    local Qpos = GetBestCastPosition(targetQ, Q)
+                    if Qpos:DistanceTo() > Q.Range then 
+                    Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*Q.Range
+                    end
+                    Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*(GetDistance(Qpos, PurpleBallBitch.pos) + 0.5*targetQ.boundingRadius)
+                    if Qpos:To2D().onScreen then
+                        CastSpell(HK_Q, Qpos, Q.Range, Q.Delay*1000) 
+                    else
+                        CastSpellMM(HK_Q, Qpos, Q.Range, Q.Delay*1000)
+                    end
+                    end
+                end 
+end
 Combo = function()
     local targetR = findEmemy(R.Range)
 -----------------------------R USAGE ----------------------------------------------------
@@ -440,9 +462,9 @@ Combo = function()
                     
                     if bitch and PurpleBallBitch:GetSpellData(_W).toggleState ~= 2 then
                         CastSpell(HK_W, bitchpos, W.Range, W.Delay*1000)
-                    elseif not bitch and bigblackballs and PurpleBallBitch:GetSpellData(_W).toggleState ~= 2 then
+                    elseif not bitch and bigblackballs then
                         CastSpell(HK_W, ballposition,W.Range, W.Delay*1000)
-                    elseif not bitch and not bigblackballs and PurpleBallBitch:GetSpellData(_W).toggleState ~= 2 then
+                    elseif not bitch and not bigblackballs then
                         local minion, minionpos = findMinion()
                         if not minion then return end
                         CastSpell(HK_W, minionpos, W.Range, W.Delay*1000)
@@ -451,7 +473,7 @@ Combo = function()
             if  PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 2 and Saga.Combo.UseW:Value() then
                 local WPos = GetBestCastPosition(targetW, W)
                 if WPos:DistanceTo() > W.Range then 
-                    WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*Q.Range
+                    WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*W.Range
                     end
                     if WPos:DistanceTo() < W.Range then
                     WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*(GetDistance(WPos, PurpleBallBitch.pos) + 0.5*targetW.boundingRadius) end
@@ -1011,7 +1033,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Syndra", name = "Saga's Syndra: Big Purple Balls", icon = SagaIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.0.6"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.1.0"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1042,5 +1064,31 @@ function()
 
 	Saga:MenuElement({id = "Lasthit", name = "Lasthit", type = MENU})
 	Saga.Lasthit:MenuElement({id = "UseQ", name = "Q", value = true})
-	Saga.Lasthit:MenuElement({id = "lasthitActive", name = "Lasthit key", key = string.byte("X")})
+    Saga.Lasthit:MenuElement({id = "lasthitActive", name = "Lasthit key", key = string.byte("X")})
+    
+    Saga:MenuElement({id = "Auto", name = "AutoQ", type = MENU})
+    Saga.Auto:MenuElement({id = "useAutoQ", name = "Enable", key = string.byte("M"), toggle = true})
+
+
+    
+    Saga:MenuElement({id = "Drawings", name = "Drawings", type = MENU})
+    Saga.Drawings:MenuElement({id = "Q", name = "Draw Q range", type = MENU})
+    Saga.Drawings.Q:MenuElement({id = "Enabled", name = "Enabled", value = true})       
+    Saga.Drawings.Q:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
+    Saga.Drawings.Q:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})
+
+    Saga.Drawings:MenuElement({id = "E", name = "Draw Long E range", type = MENU})
+    Saga.Drawings.E:MenuElement({id = "Enabled", name = "Enabled", value = true})       
+    Saga.Drawings.E:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
+    Saga.Drawings.E:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})
+
+    Saga.Drawings:MenuElement({id = "W", name = "Draw W range", type = MENU})
+    Saga.Drawings.W:MenuElement({id = "Enabled", name = "Enabled", value = true})       
+    Saga.Drawings.W:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
+    Saga.Drawings.W:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})
+    
+    Saga.Drawings:MenuElement({id = "R", name = "Draw R range", type = MENU})
+    Saga.Drawings.R:MenuElement({id = "Enabled", name = "Enabled", value = true})       
+    Saga.Drawings.R:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
+    Saga.Drawings.R:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})
 end
