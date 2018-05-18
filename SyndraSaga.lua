@@ -26,7 +26,7 @@ Latency = Game.Latency
     local Timer  = Game.Timer
     local LocalCallbackAdd = Callback.Add
     local IDList = {}
-    local bitch, bitchpos
+    local bitch, bitchpos, minionb, minionposb
     local _EnemyHeroes
     local _OnVision = {}
     local TotalHeroes
@@ -41,7 +41,9 @@ Latency = Game.Latency
     local qlvl = PurpleBallBitch:GetSpellData(_Q).level
     local dmgQ
     local qDMG
+    local eBola
     local Tard_RangeCount = 0 -- <3 yaddle
+    
     
     --WR PREDICTION USAGE ---
     local _STUN = 5
@@ -379,6 +381,7 @@ LocalCallbackAdd(
     'Tick',
     function()
             OnVisionF()
+            
             if Saga.Auto.useAutoQ:Value() then
                 AutoQ()
             end
@@ -459,23 +462,25 @@ Combo = function()
                     if IDList then 
                     local bitch, bitchpos = findPet() end
                     local bigblackballs, ballposition = ballsearch()
-                    
                     if bitch and PurpleBallBitch:GetSpellData(_W).toggleState ~= 2 then
                         CastSpell(HK_W, bitchpos, W.Range, W.Delay*1000)
                     elseif not bitch and bigblackballs then
+                        
                         CastSpell(HK_W, ballposition,W.Range, W.Delay*1000)
+                        ball_Counter = cock()
+                        
                     elseif not bitch and not bigblackballs then
-                        local minion, minionpos = findMinion()
-                        if not minion then return end
-                        CastSpell(HK_W, minionpos, W.Range, W.Delay*1000)
+                        minionb, minionposb = findMinion()
+                        if not minionb then return end
+                        CastSpell(HK_W, minionposb, W.Range, W.Delay*1000)
                     end
                 end
             if  PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 2 and Saga.Combo.UseW:Value() then
-                local WPos = GetBestCastPosition(targetW, W)
-                if WPos:DistanceTo() > W.Range then 
+                local WPos, WCPos, hitchance = GetBestCastPosition(targetW, W)
+                if WPos:DistanceTo() > W.Range and hitchance >= 2 then 
                     WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*W.Range
                     end
-                    if WPos:DistanceTo() < W.Range then
+                    if WPos:DistanceTo() < W.Range and hitchance >= 2 then
                     WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*(GetDistance(WPos, PurpleBallBitch.pos) + 0.5*targetW.boundingRadius) end
                     if WPos:To2D().onScreen then
                         CastSpell(HK_W, WPos, W.Range, W.Delay*1000) 
@@ -542,6 +547,14 @@ Combo = function()
 				
             end
             end
+
+            -----------------------------------E Usage--------------------------
+           if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(2) == 0 and itsReadyBitch(0) ~= 0 and Saga.Combo.UseER:Value() then
+                local targetER = findEmemy(1000)
+                eBola(targetER, PurpleBallBitch.pos) 
+                
+           end
+           ----------------------------------------------------------------------
 end
 
 HarassMode = function()
@@ -569,17 +582,23 @@ HarassMode = function()
                     elseif not bitch and bigblackballs then
                         CastSpell(HK_W, ballposition,W.Range, W.Delay*1000)
                     elseif not bitch and not bigblackballs then
+                        if not minion then return end
                         local minion, minionpos = findMinion()
                         CastSpell(HK_W, minionpos, W.Range, W.Delay*1000)
                     end
                 end
      if  PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 2 and Saga.Harass.UseW:Value() then
-        local WPos = GetBestCastPosition(targetW, W)
+        local targetW2 =findEmemy(W.Range)
+        local WPos = GetBestCastPosition(targetW2, W)
             if WPos:DistanceTo() > W.Range then 
                     WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*Q.Range
              end
-                    --WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*(GetDistance(WPos, PurpleBallBitch.pos) + 0.5*targetW.boundingRadius)
-                    CastSpell(HK_W, WPos, W.Range, W.Delay*1000)
+                    WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*(GetDistance(WPos, PurpleBallBitch.pos) + 0.5*targetW.boundingRadius)
+                    if WPos:To2D().onScreen() then
+                        CastSpell(HK_W, WPos, W.Range, W.Delay*1000)
+                    else
+                        CastSpellMM(HK_W, WPos, W.Range, W.Delay*1000)
+                    end
             end
         end 
 
@@ -700,6 +719,32 @@ ballsearch = function()
 	end
     return ball, ballpos
 end
+
+VectorPointProjectionOnLineSegment = function(v1, v2, v)
+	local cx, cy, ax, ay, bx, by = v.x, v.z, v1.x, v1.z, v2.x, v2.z
+	local rL = ((cx - ax) * (bx - ax) + (cy - ay) * (by - ay)) / ((bx - ax) * (bx - ax) + (by - ay) * (by - ay))
+	local pointLine = { x = ax + rL * (bx - ax), z = ay + rL * (by - ay) }
+	local rS = rL < 0 and 0 or (rL > 1 and 1 or rL)
+	local isOnSegment = rS == rL
+	local pointSegment = isOnSegment and pointLine or {x = ax + rS * (bx - ax), z = ay + rS * (by - ay)}
+	return pointSegment, pointLine, isOnSegment
+end 
+
+eBola = function(target, me)
+    for i = shitaround(), 1, -1 do 
+        local ball = shit(i)
+        if i > 1000 then return end
+        if  target and ball and ball.visible and not ball.dead and ball.charName:lower() == "syndrasphere" and ball.pos:DistanceTo() < 700 and PurpleBallBitch.attackData.state ~= 2 then
+            local posE, posEC, hitchance = GetBestCastPosition(target, E)
+            local linesegment, line, isOnSegment = VectorPointProjectionOnLineSegment(me, posE, ball.pos)
+            if linesegment and isOnSegment and (GetDistanceSqr(ball.pos, linesegment) <= (ball.boundingRadius + Q.Width) * (ball.boundingRadius + Q.Width)) and itsReadyBitch(2) == 0 and target.pos:DistanceTo() < E.Range then
+                CastSpell(HK_E, posE, E.Range, E.Delay*1000)
+            end
+        end
+    end
+end
+
+
 
 VectorMovementCollision = function (startPoint1, endPoint1, v1, startPoint2, v2, delay)
 	local sP1x, sP1y, eP1x, eP1y, sP2x, sP2y = startPoint1.x, startPoint1.z, endPoint1.x, endPoint1.z, startPoint2.x, startPoint2.z
@@ -1033,12 +1078,13 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Syndra", name = "Saga's Syndra: Big Purple Balls", icon = SagaIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.1.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.1.1"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
 	Saga.Combo:MenuElement({id = "UseW", name = "W", value = true})
-    Saga.Combo:MenuElement({id = "UseE", name = "E", value = true})
+    Saga.Combo:MenuElement({id = "UseE", name = "QE", value = true})
+    Saga.Combo:MenuElement({id = "UseER", name = "E", value = true})
     Saga.Combo:MenuElement({id = "UseR", name = "R", value = true})
 	Saga.Combo:MenuElement({id = "comboActive", name = "Combo key", key = string.byte(" ")})
 
