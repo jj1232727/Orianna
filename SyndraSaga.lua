@@ -26,7 +26,7 @@ Latency = Game.Latency
     local Timer  = Game.Timer
     local LocalCallbackAdd = Callback.Add
     local IDList = {}
-    local bitch, bitchpos, minionb, minionposb
+    local bitch, bitchpos,
     local _EnemyHeroes
     local _OnVision = {}
     local TotalHeroes
@@ -582,8 +582,9 @@ HarassMode = function()
                     elseif not bitch and bigblackballs then
                         CastSpell(HK_W, ballposition,W.Range, W.Delay*1000)
                     elseif not bitch and not bigblackballs then
-                        if not minion then return end
+                        
                         local minion, minionpos = findMinion()
+                        if not minion then return end
                         CastSpell(HK_W, minionpos, W.Range, W.Delay*1000)
                     end
                 end
@@ -734,7 +735,7 @@ eBola = function(target, me)
     for i = shitaround(), 1, -1 do 
         local ball = shit(i)
         if i > 1000 then return end
-        if  target and ball and ball.visible and not ball.dead and ball.charName:lower() == "syndrasphere" and ball.pos:DistanceTo() < 700 and PurpleBallBitch.attackData.state ~= 2 then
+        if  target and ball and ball.visible and not ball.dead and ball.charName:lower() == "syndraqspell" and ball.pos:DistanceTo() < 700 and PurpleBallBitch.attackData.state ~= 2 then
             local posE, posEC, hitchance = GetBestCastPosition(target, E)
             local linesegment, line, isOnSegment = VectorPointProjectionOnLineSegment(me, posE, ball.pos)
             if linesegment and isOnSegment and (GetDistanceSqr(ball.pos, linesegment) <= (ball.boundingRadius + Q.Width) * (ball.boundingRadius + Q.Width)) and itsReadyBitch(2) == 0 and target.pos:DistanceTo() < E.Range then
