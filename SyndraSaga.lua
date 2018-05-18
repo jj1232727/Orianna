@@ -26,7 +26,7 @@ Latency = Game.Latency
     local Timer  = Game.Timer
     local LocalCallbackAdd = Callback.Add
     local IDList = {}
-    local bitch, bitchpos,
+    local bitch, bitchpos
     local _EnemyHeroes
     local _OnVision = {}
     local TotalHeroes
@@ -734,7 +734,6 @@ end
 eBola = function(target, me)
     for i = shitaround(), 1, -1 do 
         local ball = shit(i)
-        if i > 1000 then return end
         if  target and ball and ball.visible and not ball.dead and ball.charName:lower() == "syndraqspell" and ball.pos:DistanceTo() < 700 and PurpleBallBitch.attackData.state ~= 2 then
             local posE, posEC, hitchance = GetBestCastPosition(target, E)
             local linesegment, line, isOnSegment = VectorPointProjectionOnLineSegment(me, posE, ball.pos)
