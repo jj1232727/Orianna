@@ -43,6 +43,7 @@ Latency = Game.Latency
     local dmgQ
     local qDMG
     local eBola
+    local isEvading = ExtLibEvade and ExtLibEvade.Evading
     local Tard_RangeCount = 0 -- <3 yaddle
     local ball_counter = 0
     
@@ -119,7 +120,6 @@ Latency = Game.Latency
     local
         GetEnemyHeroes,
 		findEmemy,
-		IsEvading,
 		ClearJungle,
 		HarassMode,
 		ClearMode,
@@ -384,6 +384,7 @@ LocalCallbackAdd(
     function()
             OnVisionF()
             
+            if myHero.dead or Game.IsChatOpen() == true  or isEvading then return end
 
             if ball_counter + 500 < GetTickCount() then
                 ballsearch()
