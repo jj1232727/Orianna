@@ -22,6 +22,8 @@ Latency = Game.Latency
 	local Qdamage = {50, 95, 140, 185, 230}
     local visionTick = GetTickCount()
     local hugeballs = math.huge
+    local MathPI = math.pi
+    local atan2 = math.atan2
     local miniballs = math.min
     local Timer  = Game.Timer
     local LocalCallbackAdd = Callback.Add
@@ -135,6 +137,7 @@ Latency = Game.Latency
 		CalcMagicalDamage,
 		PassivePercentMod,
         GetItemSlot,
+        Angle,
         Saga
     
     local sqrt = math.sqrt
@@ -1097,6 +1100,15 @@ GetBestLinearCastPos = function(spell, sTar, list)
 	local endPos = startPos + (center - startPos):Normalized() * spell.Range
 	local MostHit = isHero
 	return endPos, MostHit
+end
+
+Angle = function(A, B)
+    local deltaPos = A - B
+    local angle = atan2(deltaPos.x, deltaPos.z) * 180 / MathPI
+    if angle < 0 then
+        angle = angle + 360
+    end
+    return angle
 end
 
 UpdateMovementHistory =
