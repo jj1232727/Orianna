@@ -474,7 +474,45 @@ Combo = function()
                 end
 
                 -----------------------------------------------Q USAGE---------------------------------------------
-                
+---------------------------------QE Usage------------------------------------------------------------------
+local target = findEmemy(1100)
+if target then
+--if PurpleBallBitch.dead or Game.IsChatOpen() == true  or IsEvading() == true then return end
+if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and  itsReadyBitch(2) == 0 and Saga.Combo.UseE:Value() then
+    if target.pos:DistanceTo() > Q.Range then
+    local posE, posEC, hitchance = GetBestCastPosition(target, E)
+    local pos = PurpleBallBitch.pos + (posE - PurpleBallBitch.pos):Normalized() * 600
+    if itsReadyBitch(2) == 0 and itsReadyBitch(0) == 0 then
+    if pos:To2D().onScreen then
+        CastSpell(HK_Q, pos, Q.Range, Q.Delay*1000)
+        CastSpell(HK_E, pos, E.Range, E.Delay*1000)
+    else
+        CastSpellMM(HK_Q, pos, Q.Range, Q.Delay*1000)
+        CastSpellMM(HK_E, pos, E.Range, E.Delay*1000)
+    end
+    end
+    elseif target.pos:DistanceTo() <= Q.Range then
+        local posE, posEC, hitchance = GetBestCastPosition(target, E)
+        if posE:DistanceTo() > Q.Range then
+            pos = PurpleBallBitch.pos + (posE - PurpleBallBitch.pos):Normalized()*Q.Range
+            end
+            pos = PurpleBallBitch.pos + (posE - PurpleBallBitch.pos):Normalized()*(GetDistance(posE, PurpleBallBitch.pos) + 0.5*target.boundingRadius)
+            if hitchance >= 2 then
+                if pos:To2D().onScreen then
+                    CastSpell(HK_Q, pos, Q.Range, Q.Delay*1000)
+                    CastSpell(HK_E, pos, E.Range, E.Delay*1000)
+                else
+                    CastSpellMM(HK_Q, pos, Q.Range, Q.Delay*1000)
+                    CastSpellMM(HK_E, pos, E.Range, E.Delay*1000)
+                end
+        
+        end
+        
+    end
+
+end
+
+end
 
 local targetQ = findEmemy(Q.Range)
     if targetQ then
@@ -483,7 +521,7 @@ local targetQ = findEmemy(Q.Range)
             if Qpos:DistanceTo() > Q.Range then 
                 Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*Q.Range
                 end
-            Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*(GetDistance(Qpos, PurpleBallBitch.pos) + 0.4*targetQ.boundingRadius)
+            Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*(GetDistance(Qpos, PurpleBallBitch.pos) + 0.5*targetQ.boundingRadius)
             if Qpos:To2D().onScreen then
                 CastSpell(HK_Q, Qpos, Q.Range, Q.Delay*1000) 
             else
@@ -491,85 +529,46 @@ local targetQ = findEmemy(Q.Range)
             end
           end
     end 
-
 -----------------------------------------W Usage-----------------------------------------------                
-
                 local targetW = findEmemy(W.Range)
                 if targetW then
-                if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 1 and Saga.Combo.UseW:Value()then
+                if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and GotBuff(myHero, "syndrawtooltip") == 0 and Saga.Combo.UseW:Value()then
                     if IDList then 
                     local bitch, bitchpos = findPet() end
-                    if bitch and PurpleBallBitch:GetSpellData(_W).toggleState ~= 2 then
-                        CastSpell(HK_W, bitchpos, W.Range, W.Delay*1000)
+                    if bitch  then
+                        Control.CastSpell(HK_W, bitchpos)
                     elseif not bitch and #thesenuts ~= 0 then
                         for i = 1, #thesenuts do 
                             local ballQ = thesenuts[i]
                             if ballQ and ballQ:DistanceTo() < W.Range then
-                                CastSpell(HK_W, ballQ,W.Range, W.Delay*1000)
-                                break
+                                Control.CastSpell(HK_W, ballQ)
                             end
                             end
-                    elseif not bitch and #thesenuts == 0 then
+                        elseif not bitch and #thesenuts == 0 then 
                         local minionb, minionposb = findMinion()
                         if not minionb then return end
-                        CastSpell(HK_W, minionposb, W.Range, W.Delay*1000)
+                        Control.CastSpell(HK_W, minionposb)
                     end
                 end
-            if  PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 2 and Saga.Combo.UseW:Value() then
-                local WPos, WCPos, hitchance = GetBestCastPosition(targetW, W)
+            if  PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 2 and Saga.Combo.UseW:Value() and GotBuff(myHero, "syndrawtooltip") == 1 then
+                local targetW2 =findEmemy(W.Range)
+                local WPos, WCPos, hitchance = GetBestCastPosition(targetW2, W)
                 if WPos:DistanceTo() > W.Range and hitchance >= 2 then 
                     WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*W.Range
                     end
                     if WPos:DistanceTo() < W.Range and hitchance >= 2 then
-                    WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*(GetDistance(WPos, PurpleBallBitch.pos) + 0.5*targetW.boundingRadius) end
+                    WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*(GetDistance(WPos, PurpleBallBitch.pos) + 0.5*targetW2.boundingRadius) end
                     if WPos:To2D().onScreen then
-                        CastSpell(HK_W, WPos, W.Range, W.Delay*1000) 
+                        Control.CastSpell(HK_W, WPos)
                     else
-                        CastSpellMM(HK_W, WPos, W.Range, W.Delay*1000)
+                        Control.CastSpell(HK_W, WPos)
                     end
             end
         end 
 
 
 
----------------------------------QE Usage------------------------------------------------------------------
-                local target = findEmemy(1100)
-				if target then
-				--if PurpleBallBitch.dead or Game.IsChatOpen() == true  or IsEvading() == true then return end
-                if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and  itsReadyBitch(2) == 0 and Saga.Combo.UseE:Value() then
-                    if target.pos:DistanceTo() > Q.Range then
-                    local posE, posEC, hitchance = GetBestCastPosition(target, E)
-                    local pos = PurpleBallBitch.pos + (posE - PurpleBallBitch.pos):Normalized() * 600
-                    if itsReadyBitch(2) == 0 and itsReadyBitch(0) == 0 then
-                    if pos:To2D().onScreen then
-                        CastSpell(HK_Q, pos, Q.Range, Q.Delay*1000)
-                        CastSpell(HK_E, pos, E.Range, E.Delay*1000)
-                    else
-                        CastSpellMM(HK_Q, pos, Q.Range, Q.Delay*1000)
-                        CastSpellMM(HK_E, pos, E.Range, E.Delay*1000)
-                    end
-                    end
-                    elseif target.pos:DistanceTo() <= Q.Range then
-                        local posE, posEC, hitchance = GetBestCastPosition(target, E)
-                        if posE:DistanceTo() > Q.Range then
-                            pos = PurpleBallBitch.pos + (posE - PurpleBallBitch.pos):Normalized()*Q.Range
-                            end
-                            pos = PurpleBallBitch.pos + (posE - PurpleBallBitch.pos):Normalized()*(GetDistance(posE, PurpleBallBitch.pos) + 0.5*target.boundingRadius)
-                            if hitchance >= 2 then
-                                if pos:To2D().onScreen then
-                                    CastSpell(HK_Q, pos, Q.Range, Q.Delay*1000)
-                                    CastSpell(HK_E, pos, E.Range, E.Delay*1000)
-                                else
-                                    CastSpellMM(HK_Q, pos, Q.Range, Q.Delay*1000)
-                                    CastSpellMM(HK_E, pos, E.Range, E.Delay*1000)
-                                end
-                        
-                        end
-                        
-                    end
-				
-            end
-            end
+
 
             -----------------------------------E Usage--------------------------
            if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(2) == 0 and itsReadyBitch(0) ~= 0 and Saga.Combo.UseER:Value() then
@@ -745,7 +744,7 @@ ballsearch = function()
 	for i = 1, shitaround() do
         local object = shit(i)
 		if object and object.valid and not object.dead and object.visible then
-			if object.charName:lower() == "syndrasphere" and not table.contains(thesenutties, object.pos) then
+			if object.charName:lower() == "syndrasphere" and not table.contains(thesenutties, object.pos) and object.pos:DistanceTo() < W.Range then
                 thesenutties[myCounter] = object.pos
                 myCounter = myCounter + 1
 			end
