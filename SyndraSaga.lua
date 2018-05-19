@@ -551,13 +551,12 @@ local targetQ = findEmemy(Q.Range)
                     end
                 end
             if  PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 2 and Saga.Combo.UseW:Value() and GotBuff(myHero, "syndrawtooltip") == 1 then
-                local targetW2 =findEmemy(W.Range)
-                local WPos, WCPos, hitchance = GetBestCastPosition(targetW2, W)
+                local WPos, WCPos, hitchance = GetBestCastPosition(targetW, W)
                 if WPos:DistanceTo() > W.Range and hitchance >= 2 then 
                     WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*W.Range
                     end
                     if WPos:DistanceTo() < W.Range and hitchance >= 2 then
-                    WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*(GetDistance(WPos, PurpleBallBitch.pos) + 0.5*targetW2.boundingRadius) end
+                    WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*(GetDistance(WPos, PurpleBallBitch.pos) + 0.5*targetW.boundingRadius) end
                     if WPos:To2D().onScreen then
                         Control.CastSpell(HK_W, WPos)
                     else
@@ -593,44 +592,40 @@ HarassMode = function()
                     end
                 end
                 
-     local targetW = findEmemy(W.Range)
-        if targetW then
-            if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 1 and Saga.Harass.UseW:Value() then
-                if IDList then 
+                local targetW = findEmemy(W.Range)
+                if targetW then
+                if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and GotBuff(myHero, "syndrawtooltip") == 0 and Saga.Combo.UseW:Value()then
+                    if IDList then 
                     local bitch, bitchpos = findPet() end
-                    
-                    if bitch then
-                        CastSpell(HK_W, bitchpos, W.Range, W.Delay*1000)
-                        
-                    elseif not bitch and thesenuts then
+                    if bitch  then
+                        Control.CastSpell(HK_W, bitchpos)
+                    elseif not bitch and #thesenuts ~= 0 then
                         for i = 1, #thesenuts do 
                             local ballQ = thesenuts[i]
                             if ballQ and ballQ:DistanceTo() < W.Range then
-                                CastSpell(HK_W, ballQ,W.Range, W.Delay*1000)
-                                
+                                Control.CastSpell(HK_W, ballQ)
                             end
                             end
-                    elseif not bitch and not bigblackballs then
-                        
-                        local minion, minionpos = findMinion()
-                        if not minion then return end
-                        CastSpell(HK_W, minionpos, W.Range, W.Delay*1000)
+                        elseif not bitch and #thesenuts == 0 then 
+                        local minionb, minionposb = findMinion()
+                        if not minionb then return end
+                        Control.CastSpell(HK_W, minionposb)
                     end
                 end
-     if  PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 2 and Saga.Harass.UseW:Value() then
-        local targetW2 =findEmemy(W.Range)
-        local WPos = GetBestCastPosition(targetW2, W)
-            if WPos:DistanceTo() > W.Range then 
+            if  PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and PurpleBallBitch:GetSpellData(_W).toggleState == 2 and Saga.Combo.UseW:Value() and GotBuff(myHero, "syndrawtooltip") == 1 then
+                local WPos, WCPos, hitchance = GetBestCastPosition(targetW, W)
+                if WPos:DistanceTo() > W.Range and hitchance >= 2 then 
                     WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*W.Range
-             end
-                    WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*(GetDistance(WPos, PurpleBallBitch.pos) + 0.5*targetW.boundingRadius)
+                    end
+                    if WPos:DistanceTo() < W.Range and hitchance >= 2 then
+                    WPos = PurpleBallBitch.pos + (WPos - PurpleBallBitch.pos):Normalized()*(GetDistance(WPos, PurpleBallBitch.pos) + 0.5*targetW.boundingRadius) end
                     if WPos:To2D().onScreen then
-                        CastSpell(HK_W, WPos, W.Range, W.Delay*1000)
+                        Control.CastSpell(HK_W, WPos)
                     else
-                        CastSpellMM(HK_W, WPos, W.Range, W.Delay*1000)
+                        Control.CastSpell(HK_W, WPos)
                     end
             end
-        end 
+        end  
 
 end
 
