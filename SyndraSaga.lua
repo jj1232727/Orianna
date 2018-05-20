@@ -135,7 +135,10 @@ Latency = Game.Latency
         DamageReductionMod,
         OnVision,
         OnVisionF,
-		CalcMagicalDamage,
+        CalcMagicalDamage,
+        CalcPhysicalDamage,
+        GetTarget,
+        Priority,
 		PassivePercentMod,
         GetItemSlot,
         Angle,
@@ -157,6 +160,53 @@ Latency = Game.Latency
 		return sqrt(GetDistanceSqr(p1, p2))
     end
     
+
+    Priority = function(charName)
+        local p1 = {"Alistar", "Amumu", "Blitzcrank", "Braum", "Cho'Gath", "Dr. Mundo", "Garen", "Gnar", "Maokai", "Hecarim", "Jarvan IV", "Leona", "Lulu", "Malphite", "Nasus", "Nautilus", "Nunu", "Olaf", "Rammus", "Renekton", "Sejuani", "Shen", "Shyvana", "Singed", "Sion", "Skarner", "Taric", "TahmKench", "Thresh", "Volibear", "Warwick", "MonkeyKing", "Yorick", "Zac", "Poppy", "Ornn"}
+        local p2 = {"Aatrox", "Darius", "Elise", "Evelynn", "Galio", "Gragas", "Irelia", "Jax", "Lee Sin", "Morgana", "Janna", "Nocturne", "Pantheon", "Rengar", "Rumble", "Swain", "Trundle", "Tryndamere", "Udyr", "Urgot", "Vi", "XinZhao", "RekSai", "Bard", "Nami", "Sona", "Camille", "Kled", "Ivern", "Illaoi"}
+        local p3 = {"Akali", "Diana", "Ekko", "FiddleSticks", "Fiora", "Gangplank", "Fizz", "Heimerdinger", "Jayce", "Kassadin", "Kayle", "Kha'Zix", "Lissandra", "Mordekaiser", "Nidalee", "Riven", "Shaco", "Vladimir", "Yasuo", "Zilean", "Zyra", "Ryze", "Kayn", "Rakan", "Pyke"}
+        local p4 = {"Ahri", "Anivia", "Annie", "Ashe", "Azir", "Brand", "Caitlyn", "Cassiopeia", "Corki", "Draven", "Ezreal", "Graves", "Jinx", "Kalista", "Karma", "Karthus", "Katarina", "Kennen", "KogMaw", "Kindred", "Leblanc", "Lucian", "Lux", "Malzahar", "MasterYi", "MissFortune", "Orianna", "Quinn", "Sivir", "Syndra", "Talon", "Teemo", "Tristana", "TwistedFate", "Twitch", "Varus", "Vayne", "Veigar", "Velkoz", "Viktor", "Xerath", "Zed", "Ziggs", "Jhin", "Soraka", "Zoe", "Xayah","Kaisa", "Taliyah", "AurelionSol"}
+        if table.contains(p1, charName) then return 1 end
+        if table.contains(p2, charName) then return 1.25 end
+        if table.contains(p3, charName) then return 1.75 end
+        return table.contains(p4, charName) and 2.25 or 1
+      end
+      
+      GetTarget = function(range,t,pos)
+      local t = t or "AD"
+      local pos = pos or myHero.pos
+      local target = {}
+          for i = 1, TotalHeroes do
+              local hero = _EnemyHeroes[i]
+              if hero.isEnemy and not hero.dead then
+                  OnVision(hero)
+              end
+              if hero.isEnemy and hero.valid and not hero.dead and (OnVision(hero).state == true or (OnVision(hero).state == false and GetTickCount() - OnVision(hero).tick < 650)) and hero.isTargetable and not hero.isImmortal and not (GotBuff(hero, 'FioraW') == 1) and
+              not (GotBuff(hero, 'XinZhaoRRangedImmunity') == 1 and hero.distance < 450) then
+                  local heroPos = hero.pos
+                  if OnVision(hero).state == false then heroPos = hero.pos + Vector(hero.pos,hero.posTo):Normalized() * ((GetTickCount() - OnVision(hero).tick)/1000 * hero.ms) end
+                  if GetDistance(pos,heroPos) <= range then
+                      if t == "AD" then
+                          target[(CalcPhysicalDamage(myHero,hero,100) / hero.health)*Priority(hero.charName)] = hero
+                      elseif t == "AP" then
+                          target[(CalcMagicalDamage(myHero,hero,100) / hero.health)*Priority(hero.charName)] = hero
+                      elseif t == "HYB" then
+                          target[((CalcMagicalDamage(myHero,hero,50) + CalcPhysicalDamage(myHero,hero,50))/ hero.health)*Priority(hero.charName)] = hero
+                      end
+                  end
+              end
+          end
+          local bT = 0
+          for d,v in pairs(target) do
+              if d > bT then
+                  bT = d
+              end
+          end
+          
+          if bT ~= 0 then return target[bT]  end
+          
+      end
+
     GetEnemyHeroes = function()
         if _EnemyHeroes then
             return _EnemyHeroes
@@ -184,6 +234,47 @@ Latency = Game.Latency
         end
         return target
     end
+
+    function CalcPhysicalDamage(source, target, amount)
+        local ArmorPenPercent = source.armorPenPercent
+        local ArmorPenFlat = (0.4 + target.levelData.lvl / 30) * source.armorPen
+        local BonusArmorPen = source.bonusArmorPenPercent
+      
+        if source.type == Obj_AI_Minion then
+          ArmorPenPercent = 1
+          ArmorPenFlat = 0
+          BonusArmorPen = 1
+        elseif source.type == Obj_AI_Turret then
+          ArmorPenFlat = 0
+          BonusArmorPen = 1
+          if source.charName:find("3") or source.charName:find("4") then
+            ArmorPenPercent = 0.25
+          else
+            ArmorPenPercent = 0.7
+          end
+        end
+      
+        if source.type == Obj_AI_Turret then
+          if target.type == Obj_AI_Minion then
+            amount = amount * 1.25
+            if string.ends(target.charName, "MinionSiege") then
+              amount = amount * 0.7
+            end
+            return amount
+          end
+        end
+      
+        local armor = target.armor
+        local bonusArmor = target.bonusArmor
+        local value = 100 / (100 + (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat)
+      
+        if armor < 0 then
+          value = 2 - 100 / (100 - armor)
+        elseif (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat < 0 then
+          value = 1
+        end
+        return math.max(0, math.floor(DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 1)))
+      end
 
     CalcMagicalDamage = function(source, target, amount)
         local mr = target.magicResist
@@ -457,7 +548,7 @@ AutoQ = function()
                 end 
 end
 Combo = function()
-    local targetR = findEmemy(R.Range)
+    local targetR = GetTarget(R.Range)
 -----------------------------R USAGE ----------------------------------------------------
                 if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(3) == 0 and Saga.Combo.UseR:Value() then
                     rDMG = 0
@@ -476,7 +567,7 @@ Combo = function()
 
                 -----------------------------------------------Q USAGE---------------------------------------------
 ---------------------------------QE Usage------------------------------------------------------------------
-local target = findEmemy(1100)
+local target = GetTarget(1100)
 if target then
 --if PurpleBallBitch.dead or Game.IsChatOpen() == true  or IsEvading() == true then return end
 if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and  itsReadyBitch(2) == 0 and Saga.Combo.UseE:Value() then
@@ -515,7 +606,7 @@ end
 
 end
 
-local targetQ = findEmemy(Q.Range)
+local targetQ = GetTarget(Q.Range)
     if targetQ then
         if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and targetQ.pos:DistanceTo() < Q.Range and itsReadyBitch(2) ~= 0 and itsReadyBitch(1) ~= 0 and Saga.Combo.UseQ:Value() then 
             local Qpos = GetBestCastPosition(targetQ, Q)
@@ -531,7 +622,7 @@ local targetQ = findEmemy(Q.Range)
           end
     end 
 -----------------------------------------W Usage-----------------------------------------------                
-                local targetW = findEmemy(W.Range)
+                local targetW = GetTarget(W.Range)
                 if targetW then
                 if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and GotBuff(myHero, "syndrawtooltip") == 0 and Saga.Combo.UseW:Value() and wCounter + 100 < GetTickCount() then
                     if IDList then 
@@ -556,7 +647,7 @@ local targetQ = findEmemy(Q.Range)
                 end
             if  PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and Saga.Combo.UseW:Value() and GotBuff(myHero, "syndrawtooltip") == 1 and wCounter + 500 < GetTickCount()then
                 
-                local targetW2 = findEmemy(W.Range)
+                local targetW2 = GetTarget(W.Range)
                 local W2Pos, WCPos, hitchance = GetBestCastPosition(targetW2, W)
                 if W2Pos:DistanceTo() > W.Range and hitchance >= 2 then 
                     W2Pos = PurpleBallBitch.pos + (W2Pos - PurpleBallBitch.pos):Normalized()*W.Range
@@ -587,7 +678,7 @@ local targetQ = findEmemy(Q.Range)
 end
 
 HarassMode = function()
-    local targetQ = findEmemy(Q.Range)
+    local targetQ = GetTarget(Q.Range)
                 if targetQ then
                     if itsReadyBitch(0) == 0 and targetQ.pos:DistanceTo() < Q.Range and Saga.Harass.UseQ:Value()then 
                     local Qpos, posQC, hitchance = GetBestCastPosition(targetQ, Q)
@@ -600,7 +691,7 @@ HarassMode = function()
                     end
                 end
                 
-                local targetW = findEmemy(W.Range)
+                local targetW = GetTarget(W.Range)
                 if targetW then
                 if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and GotBuff(myHero, "syndrawtooltip") == 0 and Saga.Combo.UseW:Value() and wCounter + 100 < GetTickCount() then
                     if IDList then 
@@ -625,7 +716,7 @@ HarassMode = function()
                 end
             if  PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and Saga.Combo.UseW:Value() and GotBuff(myHero, "syndrawtooltip") == 1 and wCounter + 500 < GetTickCount()then
                 
-                local targetW2 = findEmemy(W.Range)
+                local targetW2 = GetTarget(W.Range)
                 local W2Pos, WCPos, hitchance = GetBestCastPosition(targetW2, W)
                 if W2Pos:DistanceTo() > W.Range and hitchance >= 2 then 
                     W2Pos = PurpleBallBitch.pos + (W2Pos - PurpleBallBitch.pos):Normalized()*W.Range
