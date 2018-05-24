@@ -33,6 +33,21 @@ require "MapPosition"
 	local dmgQ,dmgW,dmgE,dmgR
 	local AC = false
 	local LocalCallbackAdd = Callback.Add
+	local _OnVision = {}
+	local visionTick = GetTickCount()
+	IsEvading = ExtLibEvade and ExtLibEvade.Evading
+
+	--WR PREDICTION USAGE ---
+    local _STUN = 5
+    local _TAUNT = 8    
+    local _SLOW = 10    
+    local _SNARE = 11
+    local _CHARM = 22
+    local _SUPRESS = 24        
+    local _AIRBORNE = 30
+    local _SLEEP = 18
+	---WR PREDICTION USAGE -----
+	
 	-- WRPred functions
 	local VectorMovementCollision, IsDashing, IsImmobile, IsSlowed, CalculateTargetPosition, GetBestCastPosition, ExcludeFurthest, GetBestCircularCastPos, GetBestLinearCastPos
 	--My Functions
@@ -51,7 +66,6 @@ require "MapPosition"
 		GetEnemiesinRangeCount,
 		GetAllyHeroes,
 		CheckPotentialKills,
-		IsEvading,
 		ClearJungle,
 		HarassMode,
 		ClearMode,
@@ -63,7 +77,13 @@ require "MapPosition"
 		GetItemSlot,
 		ValidTargetM,
 		VectorPointProjectionOnLineSegment,
-		combBreaker
+		combBreaker,
+		AutoEAlly, 
+		onVision,
+		OnVisionF,
+		GetTarget, 
+		Priority, CastSpell, CastSpellMM
+
 
 		local DamageReductionTable = {
 			['Braum'] = {
@@ -147,12 +167,11 @@ require "MapPosition"
 	  LocalCallbackAdd(
     'Load',
 	function()
-		
-		Saga_Menu()
 		ballLoad()
+		Saga_Menu()
+		
 		TotalHeroes = GetEnemyHeroes()
 		TotalAHeroes = GetAllyHeroes()
-		GetEnemyHeroes()
 		if GotBuff(myHero, "ASSETS/Perks/Styles/Sorcery/ArcaneComet/ArcaneComet.lua") then
 			AC = true 
 		end
@@ -178,11 +197,12 @@ require "MapPosition"
     'Tick',
 	function()
 				uBall()
+				OnVisionF()
 				
+				if myHero.dead or Game.IsChatOpen() == true then return end
+				AutoEAlly()
 				
-				if myHero.dead or Game.IsChatOpen() == true  or IsEvading() == true then return end
-				if Saga.Combo.comboActive:Value() then
-					if myHero.attackData.stae == 2 then return end
+				if Saga.Combo.comboActive:Value() and myHero.attackData.state ~= 2 then
 					combBreaker()
 				end
 				if Saga.Harass.harassActive:Value() then
@@ -196,6 +216,7 @@ require "MapPosition"
 				if Saga.Lasthit.lasthitActive:Value() then
 					LastHitMode()
 				end
+			
 			end	
 
 )
@@ -352,11 +373,70 @@ CalcMagicalDamage = function(source, target, amount)
 		return 0
 	end
 
-	IsEvading = function()
-    if ExtLibEvade and ExtLibEvade.Evading then
+	
+
+local castSpell = {state = 0, tick = GetTickCount(), casting = GetTickCount() - 1000, mouse = mousePos}
+        CastSpell = function(spell,pos,range,delay)
         
-        return true
-    end
+            local range = range or hugeballs
+            local delay = delay or 250
+            local ticker = GetTickCount()
+        
+            if castSpell.state == 0 and GetDistance(myHero.pos, pos) < range and ticker - castSpell.casting > delay + Latency() then
+                castSpell.state = 1
+                castSpell.mouse = mousePos
+                castSpell.tick = ticker
+            end
+            if castSpell.state == 1 then
+                if ticker - castSpell.tick < Latency() then
+                    Control.SetCursorPos(pos)
+                    Control.KeyDown(spell)
+                    Control.KeyUp(spell)
+                    castSpell.casting = ticker + delay
+                    DelayAction(function()
+                        if castSpell.state == 1 then
+                            Control.SetCursorPos(castSpell.mouse)
+                            castSpell.state = 0
+                        end
+                    end,Latency()/1000)
+                end
+                if ticker - castSpell.casting > Latency() then
+                    Control.SetCursorPos(castSpell.mouse)
+                    castSpell.state = 0
+                end
+            end
+        end
+
+    CastSpellMM = function(spell, pos, range, delay)
+
+	local range = range or hugeballs
+	local delay = delay or 250
+	local ticker = GetTickCount()
+
+	if castSpell.state == 0 and GetDistance(myHero.pos, pos) < range and ticker - castSpell.casting > delay + Latency() then
+		castSpell.state = 1
+		castSpell.mouse = mousePos
+		castSpell.tick = ticker
+	end
+	if castSpell.state == 1 then
+		if ticker - castSpell.tick < Latency() then
+			local castPosMM = pos:ToMM()
+			Control.SetCursorPos(castPosMM.x,castPosMM.y)
+			Control.KeyDown(spell)
+			Control.KeyUp(spell)
+			castSpell.casting = ticker + delay
+			DelayAction(function()
+				if castSpell.state == 1 then
+					Control.SetCursorPos(castSpell.mouse)
+					castSpell.state = 0
+				end
+			end,Latency()/1000)
+		end
+		if ticker - castSpell.casting > Latency() then
+			Control.SetCursorPos(castSpell.mouse)
+			castSpell.state = 0
+		end
+	end
 end
 
 GetComboDamage = function(target)
@@ -418,7 +498,7 @@ GetEnemyHeroes = function()
         return _EnemyHeroes
     end
 	_EnemyHeroes = {}
-    for i = 1, Game.HeroCount(i) do
+    for i = 1, Game.HeroCount() do
         local unit = sHero(i)
         if unit.team == TEAM_ENEMY  then
             _EnemyHeroes[myCounter] = unit
@@ -472,9 +552,9 @@ GetEnemiesinRangeCount = function(target,range)
     for i = 1, TotalHeroes do
 		local unit = _EnemyHeroes[i]
 		if unit.pos ~= nil and validTarget(unit) then
-			if  GetDistance(unit.pos, unit.pos) <= range then
+			if  GetDistance(target, unit.pos) <= range then
 								
-								inRadius[myCounter] = unit
+				inRadius[myCounter] = unit
                 myCounter = myCounter + 1
             end
         end
@@ -541,8 +621,18 @@ AutoKSR = function()
 	end
 end
 
+AutoEAlly = function()
+local ally = findAlly(E.Range)
+if ally then
+	local eHit = GetEnemiesinRangeCount(ally, 200)
+	if eHit >= 2 and Game.CanUseSpell(2) == 0 and Saga.Combo.UseE:Value() and GotBuff(ally, "orianaghostself") == 0 and GotBuff(ally, "orianaghost") == 0 then
+		Control.CastSpell(HK_E,ally)
+	end
+end
+end
+
 combBreaker = function()
-	local target = findEmemy(Q.Range)
+	local target = GetTarget(Q.Range)
 	local ER, HER
 	if target == nil then return end
 	
@@ -550,22 +640,14 @@ combBreaker = function()
 	local hp = target.health + target.shieldAP + target.shieldAD
 	local dmg = GetComboDamage(target)
 
-	if Saga.Combo.UseW:Value() and Game.CanUseSpell(1) == 0 then
-		--pos = GetBestCastPosition(target, Q)
-		local Tar2Ball = GetDistanceSqr(ball_pos, target.pos) - target.boundingRadius * target.boundingRadius
-		if Tar2Ball < (W.Radius * W.Radius) and Game.CanUseSpell(1) == 0 then
-			
-			Control.CastSpell(HK_W)
-		end
-	end
+	
 	ER, HER = CheckEnemiesHitByR()
 	
 	
 	if ER > 0 and Saga.Combo.UseR:Value() then
 	local kills, pk = CheckPotentialKills(HER)
 	if kills >= Saga.Misc.RCountkills:Value() or pk >= Saga.Misc.RCountpot:Value() and Game.CanUseSpell(3) == 0 then
-		if Game.CanUseSpell(3) == 0 then 
-		Control.CastSpell(HK_R) end
+		Control.CastSpell(HK_R)
 	end
 	end
 
@@ -574,7 +656,13 @@ combBreaker = function()
 		Control.CastSpell(HK_R)
 	end
 
-	
+	if Saga.Combo.UseW:Value() and Game.CanUseSpell(1) == 0 then
+		local Tar2Ball = GetDistanceSqr(ball_pos, target.pos) - target.boundingRadius * target.boundingRadius
+		if Tar2Ball < (W.Radius * W.Radius) and Game.CanUseSpell(1) == 0 then
+			
+			Control.CastSpell(HK_W)
+		end
+	end
 
 	local hero, closest = getClosestAlly(myHero.pos, target.pos)
 	local pos
@@ -593,12 +681,17 @@ combBreaker = function()
 		if Dist > (Q.Range*Q.Range) then
 			pos = myHero.pos + (pos - myHero.pos):Normalized()*Q.Range
 		end
-		Control.CastSpell(HK_Q, pos)
+		if pos:To2D().onScreen and Game.CanUseSpell(0) == 0 then
+			CastSpell(HK_Q, pos, Q.Range, Q.Delay*1000) 
+		else
+			if Game.CanUseSpell(0) == 0 then 
+			CastSpellMM(HK_Q, pos, Q.Range, Q.Delay*1000) end 
+		end
 	end
 
 	
 
-	if Game.CanUseSpell(2) == 0 and Saga.Combo.UseE:Value() and Game.CanUseSpell(0) ~= 0  then
+	if Game.CanUseSpell(2) == 0 and Saga.Combo.UseE:Value() then
 		GetEnemyHitByE()
 	end
 
@@ -630,7 +723,8 @@ end
 			if Dist > (Q.Range*Q.Range) then
 				pos = myHero.pos + (pos - myHero.pos):Normalized()*Q.Range
 			end
-			Control.CastSpell(HK_Q, pos)
+			if Game.CanUseSpell(0) == 0 then 
+ 			Control.CastSpell(HK_Q, pos) end 
 		end
 			
 		end
@@ -683,6 +777,29 @@ end
 					end
 	end
 
+
+	OnVision = function(unit)
+		_OnVision[unit.networkID] = _OnVision[unit.networkID] == nil and {state = unit.visible, tick = GetTickCount(), pos = unit.pos} or _OnVision[unit.networkID]
+		if _OnVision[unit.networkID].state == true and not unit.visible then
+			_OnVision[unit.networkID].state = false
+			_OnVision[unit.networkID].tick = GetTickCount()
+		end
+		if _OnVision[unit.networkID].state == false and unit.visible then
+			_OnVision[unit.networkID].state = true
+			_OnVision[unit.networkID].tick = GetTickCount()
+		end
+		return _OnVision[unit.networkID]
+	end
+	
+	OnVisionF = function()
+		if GetTickCount() - visionTick > 100 then
+			for i = 1, TotalHeroes do
+				OnVision(_EnemyHeroes[i])
+			end
+			visionTick = GetTickCount()
+		end
+	end
+
 	LastHitMode = function()
 		if Game.CanUseSpell(0) == 0 and Saga.Lasthit.UseQ:Value() then
 				for i = 1, Game.MinionCount() do
@@ -697,6 +814,53 @@ end
 			end
 		end
 	end
+
+
+	Priority = function(charName)
+        local p1 = {"Alistar", "Amumu", "Blitzcrank", "Braum", "Cho'Gath", "Dr. Mundo", "Garen", "Gnar", "Maokai", "Hecarim", "Jarvan IV", "Leona", "Lulu", "Malphite", "Nasus", "Nautilus", "Nunu", "Olaf", "Rammus", "Renekton", "Sejuani", "Shen", "Shyvana", "Singed", "Sion", "Skarner", "Taric", "TahmKench", "Thresh", "Volibear", "Warwick", "MonkeyKing", "Yorick", "Zac", "Poppy", "Ornn"}
+        local p2 = {"Aatrox", "Darius", "Elise", "Evelynn", "Galio", "Gragas", "Irelia", "Jax", "Lee Sin", "Morgana", "Janna", "Nocturne", "Pantheon", "Rengar", "Rumble", "Swain", "Trundle", "Tryndamere", "Udyr", "Urgot", "Vi", "XinZhao", "RekSai", "Bard", "Nami", "Sona", "Camille", "Kled", "Ivern", "Illaoi"}
+        local p3 = {"Akali", "Diana", "Ekko", "FiddleSticks", "Fiora", "Gangplank", "Fizz", "Heimerdinger", "Jayce", "Kassadin", "Kayle", "Kha'Zix", "Lissandra", "Mordekaiser", "Nidalee", "Riven", "Shaco", "Vladimir", "Yasuo", "Zilean", "Zyra", "Ryze", "Kayn", "Rakan", "Pyke"}
+        local p4 = {"Ahri", "Anivia", "Annie", "Ashe", "Azir", "Brand", "Caitlyn", "Cassiopeia", "Corki", "Draven", "Ezreal", "Graves", "Jinx", "Kalista", "Karma", "Karthus", "Katarina", "Kennen", "KogMaw", "Kindred", "Leblanc", "Lucian", "Lux", "Malzahar", "MasterYi", "MissFortune", "Orianna", "Quinn", "Sivir", "Syndra", "Talon", "Teemo", "Tristana", "TwistedFate", "Twitch", "Varus", "Vayne", "Veigar", "Velkoz", "Viktor", "Xerath", "Zed", "Ziggs", "Jhin", "Soraka", "Zoe", "Xayah","Kaisa", "Taliyah", "AurelionSol"}
+        if table.contains(p1, charName) then return 1 end
+        if table.contains(p2, charName) then return 1.25 end
+        if table.contains(p3, charName) then return 1.75 end
+        return table.contains(p4, charName) and 2.25 or 1
+      end
+
+	GetTarget = function(range,t,pos)
+		local t = t or "AD"
+		local pos = pos or myHero.pos
+		local target = {}
+			for i = 1, TotalHeroes do
+				local hero = _EnemyHeroes[i]
+				if hero.isEnemy and not hero.dead then
+					OnVision(hero)
+				end
+				if hero.isEnemy and hero.valid and not hero.dead and (OnVision(hero).state == true or (OnVision(hero).state == false and GetTickCount() - OnVision(hero).tick < 650)) and hero.isTargetable and not hero.isImmortal and not (GotBuff(hero, 'FioraW') == 1) and
+				not (GotBuff(hero, 'XinZhaoRRangedImmunity') == 1 and hero.distance < 450) then
+					local heroPos = hero.pos
+					if OnVision(hero).state == false then heroPos = hero.pos + Vector(hero.pos,hero.posTo):Normalized() * ((GetTickCount() - OnVision(hero).tick)/1000 * hero.ms) end
+					if GetDistance(pos,heroPos) <= range then
+						if t == "AD" then
+							target[(CalcPhysicalDamage(myHero,hero,100) / hero.health)*Priority(hero.charName)] = hero
+						elseif t == "AP" then
+							target[(CalcMagicalDamage(myHero,hero,100) / hero.health)*Priority(hero.charName)] = hero
+						elseif t == "HYB" then
+							target[((CalcMagicalDamage(myHero,hero,50) + CalcPhysicalDamage(myHero,hero,50))/ hero.health)*Priority(hero.charName)] = hero
+						end
+					end
+				end
+			end
+			local bT = 0
+			for d,v in pairs(target) do
+				if d > bT then
+					bT = d
+				end
+			end
+			
+			if bT ~= 0 then return target[bT]  end
+			
+		end
 
 	CheckPotentialKills = function(lst)
 		local killable =  {}
@@ -745,7 +909,7 @@ end
 GetEnemyHitByE = function()
 	if ball_pos == myHero.pos then return end
 	local valueLine = getLineCountE()
-	if GotBuff(myHero, "orianaghostself") == 0 and valueLine >= 1 and Saga.Combo.UseE:Value() and Game.CanUseSpell(2) == 0 then
+	if GotBuff(myHero, "orianaghostself") == 0 and valueLine >= 1 and Saga.Combo.UseE:Value() and Game.CanUseSpell(2) == 0 and Game.CanUseSpell(1) ~= 0 then
 		Control.CastSpell(HK_E, myHero)
 	end
 end
@@ -1075,7 +1239,7 @@ end
 Saga_Menu =
 function()
 	Saga = MenuElement({type = MENU, id = "Orianna", name = "Saga's Orianna: Balls of Fury", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5.1"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.6.2"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
