@@ -506,9 +506,9 @@ LocalCallbackAdd(
             end
             UpdateDamage()
 
-            if  cock() - hpredTick > 10 then
+            --if  cock() - hpredTick > 10 then
                 UpdateMovementHistory()
-            end
+            --end
             hpredTick = cock()
         end)
 
@@ -531,7 +531,7 @@ LocalCallbackAdd(
     end    
 
 AutoQ = function()
-    local targetQ = findEmemy(Q.Range)
+    local targetQ = GetTarget(Q.Range)
                 if targetQ then
                     if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and targetQ.pos:DistanceTo() < Q.Range then 
                     local Qpos = GetBestCastPosition(targetQ, Q)
@@ -574,13 +574,13 @@ if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and  itsReady
     if target.pos:DistanceTo() > Q.Range then
     local posE, posEC, hitchance = GetBestCastPosition(target, E)
     local pos = PurpleBallBitch.pos + (posE - PurpleBallBitch.pos):Normalized() * 600
-    if itsReadyBitch(2) == 0 and itsReadyBitch(0) == 0 then
+    if itsReadyBitch(2) == 0 and itsReadyBitch(0) == 0 and hitchance >= 2 then
     if pos:To2D().onScreen then
-        CastSpell(HK_Q, pos, Q.Range, Q.Delay*1000)
-        CastSpell(HK_E, pos, E.Range, E.Delay*1000)
+        CastSpell(HK_Q, pos, Q.Range)
+        CastSpell(HK_E, pos, E.Range, 1000 + ping)
     else
-        CastSpellMM(HK_Q, pos, Q.Range, Q.Delay*1000)
-        CastSpellMM(HK_E, pos, E.Range, E.Delay*1000)
+        CastSpellMM(HK_Q, pos, Q.Range)
+        CastSpellMM(HK_E, pos, E.Range, 1000 + ping)
     end
     end
     elseif target.pos:DistanceTo() <= Q.Range then
@@ -591,11 +591,11 @@ if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and  itsReady
             pos = PurpleBallBitch.pos + (posE - PurpleBallBitch.pos):Normalized()*(GetDistance(posE, PurpleBallBitch.pos) + 0.5*target.boundingRadius)
             if hitchance >= 2 then
                 if pos:To2D().onScreen then
-                    CastSpell(HK_Q, pos, Q.Range, Q.Delay*1000)
-                    CastSpell(HK_E, pos, E.Range, E.Delay*1000)
+                    CastSpell(HK_Q, pos, Q.Range)
+                    CastSpell(HK_E, pos, E.Range, 1000 + ping)
                 else
-                    CastSpellMM(HK_Q, pos, Q.Range, Q.Delay*1000)
-                    CastSpellMM(HK_E, pos, E.Range, E.Delay*1000)
+                    CastSpellMM(HK_Q, pos, Q.Range)
+                    CastSpellMM(HK_E, pos, E.Range, 1000 + ping)
                 end
         
         end
@@ -608,7 +608,8 @@ end
 
 local targetQ = GetTarget(Q.Range)
     if targetQ then
-        if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and targetQ.pos:DistanceTo() < Q.Range and itsReadyBitch(2) ~= 0 and itsReadyBitch(1) ~= 0 and Saga.Combo.UseQ:Value() then 
+        if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and targetQ.pos:DistanceTo() < Q.Range  and Saga.Combo.UseQ:Value() then
+            if itsReadyBitch(2) ~= 0 and Saga.Combo.UseE:Value() then return end 
             local Qpos = GetBestCastPosition(targetQ, Q)
             if Qpos:DistanceTo() > Q.Range then 
                 Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*Q.Range
@@ -645,7 +646,7 @@ local targetQ = GetTarget(Q.Range)
                         wCounter = GetTickCount()
                     end
                 end
-            if  PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and Saga.Combo.UseW:Value() and GotBuff(myHero, "syndrawtooltip") == 1 and wCounter + 500 < GetTickCount()then
+            if  PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and Saga.Combo.UseW:Value() and GotBuff(myHero, "syndrawtooltip") == 1 and wCounter + 250 < GetTickCount()then
                 
                 local targetW2 = GetTarget(W.Range)
                 local W2Pos, WCPos, hitchance = GetBestCastPosition(targetW2, W)
@@ -669,7 +670,8 @@ local targetQ = GetTarget(Q.Range)
 
 
             -----------------------------------E Usage--------------------------
-           if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(2) == 0 and itsReadyBitch(0) ~= 0 and Saga.Combo.UseER:Value() then
+           if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(2) == 0 and Saga.Combo.UseER:Value() then
+                if itsReadyBitch(0) ~= 0 and Saga.Combo.UseE:Value() then return end    
                 local targetER = findEmemy(1000)
                 eBola(targetER, PurpleBallBitch.pos) 
                 
@@ -1252,7 +1254,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Syndra", name = "Saga's Syndra: Big Purple Balls", icon = SagaIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.4.1"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5.0"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
