@@ -480,7 +480,7 @@ LocalCallbackAdd(
     'Tick',
     function()
             OnVisionF()
-            
+            UpdateMovementHistory()
             if myHero.dead or Game.IsChatOpen() == true  or isEvading then return end
 
             if ball_counter + 500 < GetTickCount() then
@@ -507,9 +507,9 @@ LocalCallbackAdd(
             UpdateDamage()
 
             --if  cock() - hpredTick > 10 then
-                UpdateMovementHistory()
+                
             --end
-            hpredTick = cock()
+            --hpredTick = cock()
         end)
 
         LocalCallbackAdd(
@@ -609,8 +609,9 @@ end
 local targetQ = GetTarget(Q.Range)
     if targetQ then
         if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and targetQ.pos:DistanceTo() < Q.Range  and Saga.Combo.UseQ:Value() then
-            if itsReadyBitch(2) ~= 0 and Saga.Combo.UseE:Value() then return end 
-            local Qpos = GetBestCastPosition(targetQ, Q)
+            if itsReadyBitch(2) == 0 and Saga.Combo.UseE:Value() then return end 
+            local Qpos, qcpos, hitchance = GetBestCastPosition(targetQ, Q)
+            if hitchance >= 2 then
             if Qpos:DistanceTo() > Q.Range then 
                 Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*Q.Range
                 end
@@ -619,6 +620,7 @@ local targetQ = GetTarget(Q.Range)
                 CastSpell(HK_Q, Qpos, Q.Range, Q.Delay*1000) 
             else
                 CastSpellMM(HK_Q, Qpos, Q.Range, Q.Delay*1000)
+            end
             end
           end
     end 
@@ -671,7 +673,7 @@ local targetQ = GetTarget(Q.Range)
 
             -----------------------------------E Usage--------------------------
            if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(2) == 0 and Saga.Combo.UseER:Value() then
-                if itsReadyBitch(0) ~= 0 and Saga.Combo.UseE:Value() then return end    
+                if itsReadyBitch(0) == 0 and Saga.Combo.UseE:Value() then return end    
                 local targetER = findEmemy(1000)
                 eBola(targetER, PurpleBallBitch.pos) 
                 
@@ -695,7 +697,7 @@ HarassMode = function()
                 
                 local targetW = GetTarget(W.Range)
                 if targetW then
-                if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and GotBuff(myHero, "syndrawtooltip") == 0 and Saga.Combo.UseW:Value() and wCounter + 100 < GetTickCount() then
+                if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() < W.Range and GotBuff(myHero, "syndrawtooltip") == 0 and Saga.Harass.UseW:Value() and wCounter + 100 < GetTickCount() then
                     if IDList then 
                     local bitch, bitchpos = findPet() end
                     if bitch  then
@@ -1254,7 +1256,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Syndra", name = "Saga's Syndra: Big Purple Balls", icon = SagaIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5.1"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1272,8 +1274,8 @@ function()
 	Saga:MenuElement({id = "Clear", name = "Clear", type = MENU})
 	Saga.Clear:MenuElement({id = "UseQ", name = "Q", value = true})
 	Saga.Clear:MenuElement({id = "QCount", name = "Use Q on X minions", value = 3, min = 1, max = 4, step = 1})
-	Saga.Clear:MenuElement({id = "UseW", name = "W", value = true})
-	Saga.Clear:MenuElement({id = "WCount", name = "Use W on X minions", value = 3, min = 1, max = 4, step = 1})
+	Saga.Clear:MenuElement({id = "UseW", name = "W [Not Working]", value = true})
+	Saga.Clear:MenuElement({id = "WCount", name = "Use W on X minions [Not Working]", value = 3, min = 1, max = 4, step = 1})
 	Saga.Clear:MenuElement({id = "clearActive", name = "Clear key", key = string.byte("V")})
     
 
