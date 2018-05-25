@@ -588,7 +588,19 @@ LocalCallbackAdd("Tick", function()
     end)
 
     LocalCallbackAdd("Draw", function()
-    
+        
+        if Saga.Drawings.Q.Enabled:Value() then 
+            Draw.Circle(myHero.pos, Q.Range, 0, Saga.Drawings.Q.Color:Value())
+        end
+        
+        if Saga.Drawings.E.Enabled:Value() then 
+            Draw.Circle(myHero.pos, E.Range, 0, Saga.Drawings.Q.Color:Value())
+        end
+
+        if Saga.Drawings.R.Enabled:Value() then 
+            Draw.Circle(myHero.pos, R.Range, 0, Saga.Drawings.Q.Color:Value())
+        end
+
         for i= 1, TotalHeroes do
             local hero = _EnemyHeroes[i]
 			local barPos = hero.hpBar
@@ -1242,7 +1254,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Katarina", name = "Saga's Katarina: Shump on These Nuts", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.0.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.1.1"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1301,9 +1313,9 @@ function()
     Saga.Drawings.E:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})	
 	
     Saga.Drawings:MenuElement({id = "R", name = "Draw R range", type = MENU})
-    Saga.Drawings.E:MenuElement({id = "Enabled", name = "Enabled", value = true})       
-    Saga.Drawings.E:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
-    Saga.Drawings.E:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})	
+    Saga.Drawings.R:MenuElement({id = "Enabled", name = "Enabled", value = true})       
+    Saga.Drawings.R:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
+    Saga.Drawings.R:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})	
 
 	
 end
