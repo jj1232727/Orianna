@@ -1292,7 +1292,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Katarina", name = "Saga's Katarina: Shump on These Nuts", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.3.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.3.1"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
