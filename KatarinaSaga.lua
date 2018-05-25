@@ -919,16 +919,30 @@ function CastETarget(unit)
 end
 
 function CastEDagger(unit)
-	if unit then
+    if unit then
+        local closest = 99999
         for i = 1, #daggersList do
             local dagger = daggersList[i]
             local spot = dagger + (unit.pos - dagger): Normalized() * 145
+            if GetDistanceSqr(unit, dagger) < closest*closest then
+                closest = dagger
+            end
 			if Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit, spot) < W.Range * W.Range then
 				Control.CastSpell(HK_E, spot)
-            elseif Game.CanUseSpell(2) ~= 0 and GetDistanceSqr(unit, dagger) < W.Range * W.Range and unit.pos:DistanceTo() < W.Range then
-                Control.Move(dagger)
+            elseif Saga.Dagger.MDagger:Value() and Game.CanUseSpell(2) ~= 0 and GetDistanceSqr(unit, dagger) < W.Range + 500 * W.Range + 500 and unit.pos:DistanceTo() < 500 then
+                if GetDistanceSqr(unit, dagger) < W.Range * W.Range and not Saga.Dagger.MLDagger:Value() then
+                    Control.Move(closest)
+                    DisableAttacks(true)
+                    DisableMovement(true)
+                elseif Saga.Dagger.MLDagger:Value() then
+                    Control.Move(closest)
+                    DisableAttacks(true)
+                    DisableMovement(true)
+                end
             end
-		end
+        end
+        DisableAttacks(false)
+        DisableMovement(false)
 	end
 end
 
@@ -1278,7 +1292,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Katarina", name = "Saga's Katarina: Shump on These Nuts", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.1.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.3.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1317,6 +1331,7 @@ function()
     Saga:MenuElement({id = "Dagger", name = "Dagger Settings", type = MENU})
     Saga.Dagger:MenuElement({id = "EDagger", name = "E ON Daggers only", value = false})
     Saga.Dagger:MenuElement({id = "MDagger", name = "Move To Daggers", value = false})
+    Saga.Dagger:MenuElement({id = "MLDagger", name = "Move Max Dagger Range", value = false})
 
     Saga:MenuElement({id = "Zhonya", name = "SAVE MY ASS WITH ZHONYA", type = MENU})
     Saga.Zhonya:MenuElement({id = "UseZ", name = "Zhonya", value = true})
