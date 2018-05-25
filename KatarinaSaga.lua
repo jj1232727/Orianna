@@ -35,7 +35,7 @@ local daggerDMG = {68,72,77,82,89,96,103,112,121,131,142,154,166,180,194,208,224
 local Killsteal
 local ignitecast = HK_SUMMONER_1
 local igniteslot = SUMMONER_1
-local items = { HK_ITEM_1, HK_ITEM_2, HK_ITEM_3,  HK_ITEM_4, HK_ITEM_5, HK_ITEM_6 }
+local items = { HK_ITEM_1, HK_ITEM_2, HK_ITEM_3,  52, 53, 54 }
 local visionTick = 0
 local _OnVision = {}
 local LocalGameTurretCount 	= Game.TurretCount;
@@ -550,10 +550,10 @@ end
 LocalCallbackAdd("Tick", function()
     
     if isEvading then return end
-    if  clock() - hpredTick > 10 then
-        UpdateMovementHistory()
-    end
-    hpredTick = clock()
+    
+    UpdateMovementHistory()
+    
+   
     
     if dagger_count + 500 < GetTickCount() then
         daggersearch()
@@ -925,7 +925,9 @@ function CastEDagger(unit)
             local spot = dagger + (unit.pos - dagger): Normalized() * 145
 			if Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit, spot) < W.Range * W.Range then
 				Control.CastSpell(HK_E, spot)
-			end
+            elseif Game.CanUseSpell(2) ~= 0 and GetDistanceSqr(unit, dagger) < W.Range * W.Range and unit.pos:DistanceTo() < W.Range then
+                Control.Move(dagger)
+            end
 		end
 	end
 end
@@ -1010,10 +1012,22 @@ UseZhonya = function()
     end
 end
 
+--[[moveToDagger = function(unit)
+    for i = 1, #daggersList do
+        local dagger = daggersList[i]
+        local spot = dagger + (unit.pos - dagger): Normalized() * 145
+        if Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit, spot) < W.Range * W.Range then
+            Control.CastSpell(HK_E, spot)
+        end
+    end
+end]]--
+
 
 Combo =  function()
     local rActive = myHero.activeSpell.name == "KatarinaR"
     local target, targetQ, targetE, targetR
+    local bilgewaterCutlass = GetItemSlot(Katarina, 3144)
+    local hextechGunblade = GetItemSlot(Katarina, 3146)
     if Saga.TS.cTS:Value() then
         target = GetTarget2(W.Range)
     else
@@ -1021,16 +1035,17 @@ Combo =  function()
     end
 
     if target and Saga.Combo.UseW:Value() and Saga.Combo.UseE:Value() and Saga.Combo.UseQ:Value() then
-
+        
         local Distance = GetDistanceSqr(target)
 		if Distance <= W.Range * W.Range and not rActive then --and not R.active
 			if myHero:GetSpellData(bilgewaterCutlass).currentCd == 0 and bilgewaterCutlass and bilgewaterCutlass ~= 0 then
-                Control.CastSpell(items[bilgewaterCutlass - 5], targetE) end
+                Control.CastSpell(items[bilgewaterCutlass - 5], target) end
             if myHero:GetSpellData(hextechGunblade).currentCd == 0 and hextechGunblade ~= 0 and hextechGunblade then
-                Control.CastSpell(items[hextechGunblade - 5], targetE) end
+                Control.CastSpell(items[hextechGunblade - 5], target) end
 			CastW(target)
 			CastQ(target)
-			GetECast(target)
+            GetECast(target)
+            
         end
     end
     
@@ -1061,9 +1076,9 @@ Combo =  function()
         targetE = GetTarget(E.Range)
     end
 
-    local bilgewaterCutlass = GetItemSlot(Katarina, 3144)
-    local hextechGunblade = GetItemSlot(Katarina, 3146)
+    
     if targetE and Saga.Combo.UseW:Value() and Saga.Combo.UseE:Value() and Saga.Combo.UseQ:Value() then
+        
         local Distance = GetDistanceSqr(targetE)
         if  Distance <= E.Range * E.Range and not rActive then --and not R.active
             GetECast(targetE)
@@ -1085,7 +1100,7 @@ Combo =  function()
 
     if targetR and Saga.Combo.UseR:Value() then 
         local number, list = GetEnemiesinRangeCount(Katarina, R.Range)
-        if number >= 2 and GetDistanceSqr(myHero, targetR) < R.Range* R.Range or (targetR.health <= (GetDamage(HK_R, targetR) * 15)) then
+        if number >= 2 and GetDistanceSqr(myHero, targetR) < R.Range* R.Range or (targetR.health <= (GetDamage(HK_R, targetR) * 15)) and GetDistanceSqr(myHero, targetR) < R.Range* R.Range then
             CastR(targetR)
         end
     end 
@@ -1096,6 +1111,7 @@ Combo =  function()
 
     if not Saga.Combo.UseW:Value() or not Saga.Combo.UseE:Value() or not Saga.Combo.UseQ:Value() then
         local target = GetTarget(Q.Range)
+        
 	if target then
 		if Saga.Combo.UseQ:Value() then
 			CastQ(target)
@@ -1178,27 +1194,35 @@ end
 
 
 Killsteal = function ()
-    
+        local rActive = myHero.activeSpell.name == "KatarinaR"
             for i = 1, TotalHeroes do
                 local enemy = _EnemyHeroes[i]
                 local Distance = GetDistanceSqr(enemy)
             --Q
             if  Game.CanUseSpell(0) == 0 and Distance < Q.Range* Q.Range and Saga.Killsteal.qKS:Value() then
                 if enemy and validTarget(enemy) and enemy.health <= GetDamage(HK_Q, enemy) then
-                    
+                    if rActive then 
+                        Control.Move(mousePos)
+                    end
 					CastQ(enemy)
 				end
 			end
 			-- W
 			if  Game.CanUseSpell(1) == 0 and Distance < W.Range* W.Range and Saga.Killsteal.wKS:Value() then
 				if enemy and validTarget(enemy) and enemy.health <= GetDamage("dagger", enemy) then
-					CastW(enemy)
+                    if rActive then 
+                        Control.Move(mousePos)
+                    end
+                    CastW(enemy)
 				end
 			end
 			--E
 			if  Game.CanUseSpell(2) == 0 and Distance < E.Range* E.Range and Saga.Killsteal.eKS:Value()then
 				if enemy and validTarget(enemy) and enemy.health <= GetDamage(HK_E, enemy) then
-					CastETarget(enemy)
+                    if rActive then 
+                        Control.Move(mousePos)
+                    end
+                    CastETarget(enemy)
 				end
 			end
 
@@ -1254,7 +1278,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Katarina", name = "Saga's Katarina: Shump on These Nuts", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.1.1"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.1.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1292,6 +1316,7 @@ function()
 
     Saga:MenuElement({id = "Dagger", name = "Dagger Settings", type = MENU})
     Saga.Dagger:MenuElement({id = "EDagger", name = "E ON Daggers only", value = false})
+    Saga.Dagger:MenuElement({id = "MDagger", name = "Move To Daggers", value = false})
 
     Saga:MenuElement({id = "Zhonya", name = "SAVE MY ASS WITH ZHONYA", type = MENU})
     Saga.Zhonya:MenuElement({id = "UseZ", name = "Zhonya", value = true})
