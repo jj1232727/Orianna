@@ -929,8 +929,8 @@ function CastEDagger(unit)
             end
 			if Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit, spot) < W.Range * W.Range then
 				Control.CastSpell(HK_E, spot)
-            elseif Saga.Dagger.MDagger:Value() and Game.CanUseSpell(2) ~= 0 and GetDistanceSqr(unit, dagger) < W.Range + 500 * W.Range + 500 and unit.pos:DistanceTo() < 500 then
-                if GetDistanceSqr(unit, dagger) < W.Range * W.Range and not Saga.Dagger.MLDagger:Value() then
+            elseif Saga.Dagger.MDagger:Value() and Game.CanUseSpell(2) ~= 0 and GetDistanceSqr(unit, closest) < W.Range + 500 * W.Range + 500 and unit.pos:DistanceTo() < 500 then
+                if GetDistanceSqr(unit, closest) < W.Range * W.Range and not Saga.Dagger.MLDagger:Value() then
                     Control.Move(closest)
                     DisableAttacks(true)
                     DisableMovement(true)
@@ -1047,7 +1047,6 @@ Combo =  function()
     else
         target = GetTarget(W.Range)
     end
-
     if target and Saga.Combo.UseW:Value() and Saga.Combo.UseE:Value() and Saga.Combo.UseQ:Value() then
         
         local Distance = GetDistanceSqr(target)
@@ -1068,7 +1067,7 @@ Combo =  function()
     else
         targetQ = GetTarget(Q.Range)
     end
-
+    
     if targetQ and Saga.Combo.UseW:Value() and Saga.Combo.UseE:Value() and Saga.Combo.UseQ:Value() then
         
         local Distance = GetDistanceSqr(targetQ)
@@ -1090,7 +1089,6 @@ Combo =  function()
         targetE = GetTarget(E.Range)
     end
 
-    
     if targetE and Saga.Combo.UseW:Value() and Saga.Combo.UseE:Value() and Saga.Combo.UseQ:Value() then
         
         local Distance = GetDistanceSqr(targetE)
