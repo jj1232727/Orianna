@@ -433,6 +433,7 @@ end
 LocalCallbackAdd("Load", function()
 TotalHeroes = GetEnemyHeroes()
 Saga_Menu()
+GetIgnite()
 
 if _G.EOWLoaded then
      SagaOrb = 1
