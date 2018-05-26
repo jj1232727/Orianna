@@ -33,8 +33,8 @@ local daggersList = {}
 local dagger_count = 0
 local daggerDMG = {68,72,77,82,89,96,103,112,121,131,142,154,166,180,194,208,224,240}
 local Killsteal
-local ignitecast = HK_SUMMONER_1
-local igniteslot = SUMMONER_1
+local ignitecast
+local igniteslot
 local items = { HK_ITEM_1, HK_ITEM_2, HK_ITEM_3,  52, 53, 54 }
 local visionTick = 0
 local _OnVision = {}
@@ -792,6 +792,11 @@ CalcMagicalDamage = function(source, target, amount)
         if myHero:GetSpellData(SUMMONER_2).name:lower() == "summonerignite" then
             igniteslot = SUMMONER_2
             ignitecast = HK_SUMMONER_2
+        end
+
+        if myHero:GetSpellData(SUMMONER_1).name:lower() == "summonerignite" then
+            igniteslot = SUMMONER_1
+            ignitecast = HK_SUMMONER_1
         end
         
     end
