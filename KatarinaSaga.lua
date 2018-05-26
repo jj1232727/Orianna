@@ -86,7 +86,8 @@ local isEvading = ExtLibEvade and ExtLibEvade.Evading
         SagaSDKPhysicalDamage,
         Combo,
         OnVision,
-        onVisionF
+        onVisionF,
+        GetIgnite
 
     local Saga_Menu, Saga
 
@@ -257,6 +258,19 @@ VectorPointProjectionOnLineSegment = function(v1, v2, v)
 	local pointSegment = isOnSegment and pointLine or {x = ax + rS * (bx - ax), z = ay + rS * (by - ay)}
 	return pointSegment, pointLine, isOnSegment
 end 
+
+GetIgnite = function()
+    if myHero:GetSpellData(SUMMONER_2).name:lower() == "summonerdot" then
+        igniteslot = 5
+        ignitecast = HK_SUMMONER_2
+    end
+
+    if myHero:GetSpellData(SUMMONER_1).name:lower() == "summonerdot" then
+        igniteslot = 4
+        ignitecast = HK_SUMMONER_1
+    end
+    
+end
 
 minionCollision = function(target, me, position)
     local targemyCounter = 0
@@ -432,8 +446,9 @@ end
 
 LocalCallbackAdd("Load", function()
 TotalHeroes = GetEnemyHeroes()
-Saga_Menu()
 GetIgnite()
+Saga_Menu()
+
 
 if _G.EOWLoaded then
      SagaOrb = 1
@@ -789,18 +804,7 @@ CalcMagicalDamage = function(source, target, amount)
 		return 0
     end
     
-    function GetIgnite()
-        if myHero:GetSpellData(SUMMONER_2).name:lower() == "summonerignite" then
-            igniteslot = SUMMONER_2
-            ignitecast = HK_SUMMONER_2
-        end
-
-        if myHero:GetSpellData(SUMMONER_1).name:lower() == "summonerignite" then
-            igniteslot = SUMMONER_1
-            ignitecast = HK_SUMMONER_1
-        end
-        
-    end
+  
     OnVision = function(unit)
 		_OnVision[unit.networkID] = _OnVision[unit.networkID] == nil and {state = unit.visible, tick = GetTickCount(), pos = unit.pos} or _OnVision[unit.networkID]
 		if _OnVision[unit.networkID].state == true and not unit.visible then
@@ -1122,7 +1126,7 @@ Combo =  function()
             CastR(targetR)
         end
     end 
-    
+    --print(igniteslot)
     if targetE and Game.CanUseSpell(igniteslot) == 0 and GetDistanceSqr(Katarina, target) < 450 * 450 and 25 >= (100 * targetE.health / targetE.maxHealth) then
         Control.CastSpell(ignitecast, targetE)
     end
