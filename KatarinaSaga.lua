@@ -37,6 +37,7 @@ local ignitecast
 local igniteslot
 local items = { [ITEM_1] = 49, [ITEM_2] = 50, [ITEM_3] = 51, [ITEM_4] = 52, [ITEM_5] = 53, [ITEM_6] = 54 }
 local visionTick = 0
+
 local _OnVision = {}
 local LocalGameTurretCount 	= Game.TurretCount;
 local LocalGameTurret = Game.Turret;
@@ -271,11 +272,13 @@ GetIgnite = function()
     if myHero:GetSpellData(SUMMONER_2).name:lower() == "summonerdot" then
         igniteslot = 5
         ignitecast = HK_SUMMONER_2
-    end
 
-    if myHero:GetSpellData(SUMMONER_1).name:lower() == "summonerdot" then
+    elseif myHero:GetSpellData(SUMMONER_1).name:lower() == "summonerdot" then
         igniteslot = 4
         ignitecast = HK_SUMMONER_1
+    else
+        igniteslot = nil
+        ignitecast = nil
     end
     
 end
@@ -1103,8 +1106,11 @@ Combo =  function()
             CastR(targetR)
         end
     end 
-    if targetE and Game.CanUseSpell(igniteslot) == 0 and GetDistanceSqr(Katarina, target) < 450 * 450 and 25 >= (100 * targetE.health / targetE.maxHealth) then
-        Control.CastSpell(ignitecast, targetE)
+
+    if ignitecast and igniteslot then
+        if targetE and Game.CanUseSpell(igniteslot) == 0 and GetDistanceSqr(Katarina, target) < 450 * 450 and 25 >= (100 * targetE.health / targetE.maxHealth) then
+            Control.CastSpell(ignitecast, targetE)
+        end
     end
 
     if not Saga.Combo.UseW:Value() or not Saga.Combo.UseE:Value() or not Saga.Combo.UseQ:Value() or Game.CanUseSpell(0) == 12 or Game.CanUseSpell(1) == 12 or Game.CanUseSpell(2) == 12 then
