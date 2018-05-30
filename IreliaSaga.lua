@@ -7,7 +7,7 @@ local Latency = Game.Latency
 local ping = Latency() * .001
 local Q = { Range = 625}
 local W = { Range = 825, Delay = .60 + ping, Speed = 1400, Radius = 100}
-local E = { Range = 725, Delay = .25 + ping, Speed = 2000, Radius = 90}
+local E = { Range = 725, Delay = .25 + ping, Speed = 2000, Radius = 50}
 local R = { Range = 1000, Delay = .233 + ping , Speed = 2000, Radius = 160}
 local atan2 = math.atan2
 local MathPI = math.pi
@@ -286,12 +286,16 @@ GetIgnite = function()
     if myHero:GetSpellData(SUMMONER_2).name:lower() == "summonerdot" then
         igniteslot = 5
         ignitecast = HK_SUMMONER_2
-    end
 
-    if myHero:GetSpellData(SUMMONER_1).name:lower() == "summonerdot" then
+    elseif myHero:GetSpellData(SUMMONER_1).name:lower() == "summonerdot" then
         igniteslot = 4
         ignitecast = HK_SUMMONER_1
+    else
+        igniteslot = nil
+        ignitecast = nil
     end
+
+
     
 end
 
@@ -986,7 +990,7 @@ function CastETarget(unit)
         spot = aim + (myHero.pos - aim): Normalized() * - 250
     end
     
-    if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 1 and unit and hitchance >= 1 then
+    if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 1 and unit then
         if aim:To2D().onScreen then
             CastSpell(HK_E, spot, E.Range, E.Delay*1000)
         else
@@ -995,9 +999,10 @@ function CastETarget(unit)
         ECast = true
     end
     if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 0 and unit then
-        spot = aim + (myHero.pos - aim): Normalized() * 1000
+        local hitchance2, aim2 = GetHitchance(Katarina.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
+        local spot2 = aim2 + (myHero.pos - aim2): Normalized() * E.Range
         if aim:To2D().onScreen then
-            CastSpell(HK_E, spot, E.Range, E.Delay*1000)
+            CastSpell(HK_E, spot2, E.Range, E.Delay*1000)
         else
             CastItBlindFuck(HK_E, spot, E.Range, E.Delay*1000)
         end
@@ -1137,10 +1142,11 @@ Combo =  function()
             CastR(targetR)
         end
     end
-    if targetE and Game.CanUseSpell(igniteslot) == 0 and GetDistanceSqr(Katarina, target) < 450 * 450 and 25 >= (100 * targetE.health / targetE.maxHealth) then
-        Control.CastSpell(ignitecast, targetE)
-    end
-
+    if ignitecast and igniteslot then
+        if targetE and Game.CanUseSpell(igniteslot) == 0 and GetDistanceSqr(Katarina, target) < 450 * 450 and 25 >= (100 * targetE.health / targetE.maxHealth) then
+            Control.CastSpell(ignitecast, targetE)
+        end
+    end 
 
 end
 
@@ -1234,7 +1240,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.1.1"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.2.1"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
