@@ -1013,7 +1013,7 @@ end
 
 function CastR(unit)
 	if Game.CanUseSpell(3) == 0 and GetDistanceSqr(unit) < R.Range * R.Range then
-        local hitchance, aim = GetHitchance(Katarina.pos,  targetR, R.Range, 1.5+ping, 1000, 100)
+        local hitchance, aim = GetHitchance(Katarina.pos,  unit, R.Range, 1.5+ping, 1000, 100)
         if aim:To2D().onScreen then
             CastSpell(HK_R, unit, Q.Range, R.Delay * 1000)
         else
