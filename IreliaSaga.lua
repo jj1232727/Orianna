@@ -995,7 +995,7 @@ function CastETarget(unit)
         ECast = true
     end
     if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 0 and unit then
-        spot = aim + (myHero.pos - aim): Normalized() * 400
+        spot = aim + (myHero.pos - aim): Normalized() * 1000
         if aim:To2D().onScreen then
             CastSpell(HK_E, spot, E.Range, E.Delay*1000)
         else
@@ -1013,7 +1013,7 @@ end
 
 function CastR(unit)
 	if Game.CanUseSpell(3) == 0 and GetDistanceSqr(unit) < R.Range * R.Range then
-        local hitchance, aim = GetHitchance(Katarina.pos,  unit, R.Range, 1.5+ping, 1000, 100)
+        local hitchance, aim = GetHitchance(Katarina.pos,  unit, R.Range, R.Delay, R.Speed, R.Radius)
         if aim:To2D().onScreen then
             CastSpell(HK_R, unit, Q.Range, R.Delay * 1000)
         else
@@ -1074,7 +1074,7 @@ Combo =  function()
 
     if targetExt and Saga.Combo.UseQExt:Value() then
     local targetExtend = GetEnemiesinRangeCountQ(targetExt, 625)
-    if targetExtend and targetExt.pos:DistanceTo() >= 625 then
+    if targetExtend and targetExt.pos:DistanceTo() >= 625 and GetDistance(targetExt.pos, targetExtend.pos) <= 625*625 then
         CastQ(targetExtend)
         return
     end
@@ -1137,7 +1137,6 @@ Combo =  function()
             CastR(targetR)
         end
     end
-
     if targetE and Game.CanUseSpell(igniteslot) == 0 and GetDistanceSqr(Katarina, target) < 450 * 450 and 25 >= (100 * targetE.health / targetE.maxHealth) then
         Control.CastSpell(ignitecast, targetE)
     end
@@ -1235,7 +1234,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.0.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.1.1"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
