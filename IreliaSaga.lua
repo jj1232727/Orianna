@@ -984,13 +984,14 @@ function CastETarget(unit)
     if unit and Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit) < E.Range * E.Range then
     local spot
     local hitchance, aim = GetHitchance(Katarina.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
-    if IsFacing(unit) then
+    if IsFacing(unit) and hitchance >= 2 and aim then
         spot = aim + (myHero.pos - aim): Normalized() * - 100
     else
-        spot = aim + (myHero.pos - aim): Normalized() * - 250
+        if hitchance >= 2 then
+        spot = aim + (myHero.pos - aim): Normalized() * - 250 end
     end
     
-    if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 1 and unit then
+    if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 1 and unit and spot then
         if aim:To2D().onScreen then
             CastSpell(HK_E, spot, E.Range, E.Delay*1000)
         else
@@ -1241,7 +1242,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.2.1"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.5.1"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
