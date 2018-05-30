@@ -1001,10 +1001,11 @@ function CastETarget(unit)
     if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 0 and unit then
         local hitchance2, aim2 = GetHitchance(Katarina.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
         local spot2 = aim2 + (myHero.pos - aim2): Normalized() * E.Range
-        if aim:To2D().onScreen then
+        if aim2:To2D().onScreen and hitchance2 >= 2 then
             CastSpell(HK_E, spot2, E.Range, E.Delay*1000)
         else
-            CastItBlindFuck(HK_E, spot, E.Range, E.Delay*1000)
+            if hitchance2 >= 2 then
+            CastItBlindFuck(HK_E, spot, E.Range, E.Delay*1000) end 
         end
         ECast = false
         eClock = clock()
