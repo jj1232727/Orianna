@@ -645,7 +645,11 @@ LocalCallbackAdd("Tick", function()
         end
 
         if Saga.Drawings.E.Enabled:Value() then 
-            Draw.Circle(myHero.pos, E.Range, 0, Saga.Drawings.E.Color:Value())
+            Draw.Circle(myHero.pos, E.Range - 150, 0, Saga.Drawings.E.Color:Value())
+        end
+
+        if Saga.Drawings.Ehr.Enabled:Value() then 
+            Draw.Circle(myHero.pos, E.Range - 150, 0, Saga.Drawings.E.Color:Value())
         end
 
         if Saga.Drawings.R.Enabled:Value() then 
@@ -985,10 +989,10 @@ function CastETarget(unit)
     local spot
     local hitchance, aim = GetHitchance(Katarina.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
     if IsFacing(unit) and hitchance >= 2 and aim then
-        spot = aim + (myHero.pos - aim): Normalized() * - 100
+        spot = aim + (myHero.pos - aim): Normalized() * - 150
     else
         if hitchance >= 2 then
-        spot = aim + (myHero.pos - aim): Normalized() * - 250 end
+        spot = aim + (myHero.pos - aim): Normalized() * - 150 end
     end
     
     if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 1 and unit and spot then
@@ -1288,10 +1292,15 @@ function()
     Saga.Drawings.W:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
     Saga.Drawings.W:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})
 
-    Saga.Drawings:MenuElement({id = "E", name = "Draw E range", type = MENU})
-    Saga.Drawings.E:MenuElement({id = "Enabled", name = "Enabled", value = true})       
+    Saga.Drawings:MenuElement({id = "E", name = "Draw Real E range", type = MENU})
+    Saga.Drawings.E:MenuElement({id = "Enabled", name = "Enabled", value = false})       
     Saga.Drawings.E:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
     Saga.Drawings.E:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})	
+
+    Saga.Drawings:MenuElement({id = "Ehr", name = "Draw HurDur E mode range", type = MENU})
+    Saga.Drawings.Ehr:MenuElement({id = "Enabled", name = "Enabled", value = true})       
+    Saga.Drawings.Ehr:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
+    Saga.Drawings.Ehr:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})	
 	
     Saga.Drawings:MenuElement({id = "R", name = "Draw R range", type = MENU})
     Saga.Drawings.R:MenuElement({id = "Enabled", name = "Enabled", value = true})       
