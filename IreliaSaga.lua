@@ -7,7 +7,7 @@ local Latency = Game.Latency
 local ping = Latency() * .001
 local Q = { Range = 625}
 local W = { Range = 825, Delay = .60 + ping, Speed = 1400, Radius = 100}
-local E = { Range = 725, Delay = .25 + ping, Speed = 2000, Radius = 50}
+local E = { Range = 725, Delay = .75 + ping, Speed = 2000, Radius = 50}
 local R = { Range = 1000, Delay = .233 + ping , Speed = 2000, Radius = 160}
 local atan2 = math.atan2
 local MathPI = math.pi
@@ -974,6 +974,10 @@ CastW = function(target)
                 Control.KeyUp(HK_W)
                 charging = false
             end
+        elseif GotBuff(myHero, "ireliawdefense") == 1 and (target.pos:DistanceTo() > 700) and hitchance >= 2 and charging then
+            Control.SetCursorPos(aim)
+            Control.KeyUp(HK_W)
+            charging = false
         end
         
         
@@ -988,12 +992,8 @@ function CastETarget(unit)
     if unit and Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit) < E.Range * E.Range then
     local spot
     local hitchance, aim = GetHitchance(Katarina.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
-    if IsFacing(unit) and hitchance >= 2 and aim then
-        spot = aim + (myHero.pos - aim): Normalized() * - 150
-    else
-        if hitchance >= 2 then
-        spot = aim + (myHero.pos - aim): Normalized() * - 150 end
-    end
+        spot = aim + (myHero.pos - aim): Normalized() * -50
+    
     
     if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 1 and unit and spot then
         if aim:To2D().onScreen then
@@ -1005,12 +1005,12 @@ function CastETarget(unit)
     end
     if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 0 and unit then
         local hitchance2, aim2 = GetHitchance(Katarina.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
-        local spot2 = aim2 + (myHero.pos - aim2): Normalized() * E.Range
+        local spot2 = aim2
         if aim2:To2D().onScreen and hitchance2 >= 2 then
             CastSpell(HK_E, spot2, E.Range, E.Delay*1000)
         else
             if hitchance2 >= 2 then
-            CastItBlindFuck(HK_E, spot, E.Range, E.Delay*1000) end 
+            CastItBlindFuck(HK_E, spot2, E.Range, E.Delay*1000) end 
         end
         ECast = false
         eClock = clock()
@@ -1246,7 +1246,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.5.1"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.5.3"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
