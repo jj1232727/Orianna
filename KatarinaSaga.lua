@@ -240,7 +240,9 @@ GetTarget = function(range)
 			return GOS:GetTarget(range, "AP")
 		else
 			return GOS:GetTarget(range, "AD")
-		end
+        end
+    elseif _G.gsoSDK then
+		return _G.gsoSDK.TS:GetTarget()
 	end
 end
 
@@ -556,6 +558,8 @@ GetOrbMode = function()
         end
     elseif SagaOrb == 3 then
         return GOS:GetMode()
+    elseif SagaOrb == 4 then
+        return _G.gsoSDK.Orbwalker:GetMode()
     end
 end
 
@@ -970,7 +974,6 @@ function GetDamage(spell, unit)
 	local AP = myHero.ap
 	local bAD = myHero.bonusDamage
 
-
     if spell == HK_Q then
 		if Game.CanUseSpell(0) == 0 then
 			damage = CalcMagicalDamage(Katarina ,unit, ((Katarina:GetSpellData(_Q).level * 30 + 45) + (AP * 0.3)))
@@ -1281,7 +1284,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Katarina", name = "Saga's Katarina: Shump on These Nuts", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.3.3"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 3.0.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
