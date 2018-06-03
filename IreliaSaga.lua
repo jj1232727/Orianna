@@ -1,5 +1,5 @@
 if myHero.charName ~= "Irelia" then return end
-local Katarina = myHero
+local Irelia = myHero
 local castSpell = {state = 0, tick = GetTickCount(), casting = GetTickCount() - 1000, mouse = mousePos}
 local SagaHeroCount = Game.HeroCount()
 local SagaTimer = Game.Timer
@@ -15,7 +15,7 @@ local _movementHistory = {}
 local clock = os.clock
 
 local sHero = Game.Hero
-local TEAM_ALLY = Katarina.team
+local TEAM_ALLY = Irelia.team
 local TEAM_ENEMY = 300 - TEAM_ALLY
 local myCounter = 1
 local SagaMCount = Game.MinionCount
@@ -165,7 +165,7 @@ local isEvading = ExtLibEvade and ExtLibEvade.Evading
     }
 
 GetDistanceSqr = function(p1, p2)
-		p2 = p2 or Katarina
+		p2 = p2 or Irelia
 		p1 = p1.pos or p1
 		p2 = p2.pos or p2
 		
@@ -238,23 +238,25 @@ end
 GetTarget = function(range)
 
 	if SagaOrb == 1 then
-		if Katarina.ap > Katarina.totalDamage then
-			return EOW:GetTarget(range, EOW.ap_dec, Katarina.pos)
+		if Irelia.ap > Irelia.totalDamage then
+			return EOW:GetTarget(range, EOW.ap_dec, Irelia.pos)
 		else
-			return EOW:GetTarget(range, EOW.ad_dec, Katarina.pos)
+			return EOW:GetTarget(range, EOW.ad_dec, Irelia.pos)
 		end
 	elseif SagaOrb == 2 and SagaSDKSelector then
-		if Katarina.ap > Katarina.totalDamage then
+		if Irelia.ap > Irelia.totalDamage then
 			return SagaSDKSelector:GetTarget(range, SagaSDKMagicDamage)
 		else
 			return SagaSDKSelector:GetTarget(range, SagaSDKPhysicalDamage)
 		end
 	elseif _G.GOS then
-		if Katarina.ap > Katarina.totalDamage then
+		if Irelia.ap > Irelia.totalDamage then
 			return GOS:GetTarget(range, "AP")
 		else
 			return GOS:GetTarget(range, "AD")
-		end
+        end
+    elseif _G.gsoSDK then
+		return _G.gsoSDK.TS:GetTarget()
 	end
 end
 
@@ -507,6 +509,8 @@ elseif _G.SDK and _G.SDK.Orbwalker then
      SagaOrb = 2
 elseif _G.GOS then
      SagaOrb = 3
+elseif _G.gsoSDK then
+    SagaOrb = 4
 end
 
 if  SagaOrb == 1 then
@@ -596,6 +600,8 @@ GetOrbMode = function()
         end
     elseif SagaOrb == 3 then
         return GOS:GetMode()
+    elseif SagaOrb == 4 then
+        return _G.gsoSDK.Orbwalker:GetMode()
     end
 end
 
@@ -709,7 +715,7 @@ CastItBlindFuck = function(spell, pos, range, delay)
 	local delay = delay or 250
 	local ticker = GetTickCount()
 
-	if castSpell.state == 0 and GetDistance(Katarina.pos, pos) < range and ticker - castSpell.casting > delay + Latency() then
+	if castSpell.state == 0 and GetDistance(Irelia.pos, pos) < range and ticker - castSpell.casting > delay + Latency() then
 		castSpell.state = 1
 		castSpell.mouse = mousePos
 		castSpell.tick = ticker
@@ -907,7 +913,7 @@ CalcMagicalDamage = function(source, target, amount)
         local p1 = {"Alistar", "Amumu", "Blitzcrank", "Braum", "Cho'Gath", "Dr. Mundo", "Garen", "Gnar", "Maokai", "Hecarim", "Jarvan IV", "Leona", "Lulu", "Malphite", "Nasus", "Nautilus", "Nunu", "Olaf", "Rammus", "Renekton", "Sejuani", "Shen", "Shyvana", "Singed", "Sion", "Skarner", "Taric", "TahmKench", "Thresh", "Volibear", "Warwick", "MonkeyKing", "Yorick", "Zac", "Poppy", "Ornn"}
         local p2 = {"Aatrox", "Darius", "Elise", "Evelynn", "Galio", "Gragas", "Irelia", "Jax", "Lee Sin", "Morgana", "Janna", "Nocturne", "Pantheon", "Rengar", "Rumble", "Swain", "Trundle", "Tryndamere", "Udyr", "Urgot", "Vi", "XinZhao", "RekSai", "Bard", "Nami", "Sona", "Camille", "Kled", "Ivern", "Illaoi"}
         local p3 = {"Akali", "Diana", "Ekko", "FiddleSticks", "Fiora", "Gangplank", "Fizz", "Heimerdinger", "Jayce", "Kassadin", "Kayle", "Kha'Zix", "Lissandra", "Mordekaiser", "Nidalee", "Riven", "Shaco", "Vladimir", "Yasuo", "Zilean", "Zyra", "Ryze", "Kayn", "Rakan", "Pyke"}
-        local p4 = {"Ahri", "Anivia", "Annie", "Ashe", "Azir", "Brand", "Caitlyn", "Cassiopeia", "Corki", "Draven", "Ezreal", "Graves", "Jinx", "Kalista", "Karma", "Karthus", "Katarina", "Kennen", "KogMaw", "Kindred", "Leblanc", "Lucian", "Lux", "Malzahar", "MasterYi", "MissFortune", "Orianna", "Quinn", "Sivir", "Syndra", "Talon", "Teemo", "Tristana", "TwistedFate", "Twitch", "Varus", "Vayne", "Veigar", "Velkoz", "Viktor", "Xerath", "Zed", "Ziggs", "Jhin", "Soraka", "Zoe", "Xayah","Kaisa", "Taliyah", "AurelionSol"}
+        local p4 = {"Ahri", "Anivia", "Annie", "Ashe", "Azir", "Brand", "Caitlyn", "Cassiopeia", "Corki", "Draven", "Ezreal", "Graves", "Jinx", "Kalista", "Karma", "Karthus", "Irelia", "Kennen", "KogMaw", "Kindred", "Leblanc", "Lucian", "Lux", "Malzahar", "MasterYi", "MissFortune", "Orianna", "Quinn", "Sivir", "Syndra", "Talon", "Teemo", "Tristana", "TwistedFate", "Twitch", "Varus", "Vayne", "Veigar", "Velkoz", "Viktor", "Xerath", "Zed", "Ziggs", "Jhin", "Soraka", "Zoe", "Xayah","Kaisa", "Taliyah", "AurelionSol"}
         if table.contains(p1, charName) then return 1 end
         if table.contains(p2, charName) then return 1.25 end
         if table.contains(p3, charName) then return 1.75 end
@@ -960,7 +966,7 @@ end
 
 CastW = function(target)
     if target and Game.CanUseSpell(1) == 0 and GetDistanceSqr(target) < W.Range * W.Range then
-        local hitchance, aim = GetHitchance(Katarina.pos, target , W.Range, W.Delay, W.Speed, W.Radius)
+        local hitchance, aim = GetHitchance(Irelia.pos, target , W.Range, W.Delay, W.Speed, W.Radius)
         if not charging and GotBuff(myHero, "ireliawdefense") == 0 then
             Control.KeyDown(HK_W)
             wClock = clock()
@@ -991,7 +997,7 @@ end
 function CastETarget(unit)
     if unit and Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit) < E.Range * E.Range then
     local spot
-    local hitchance, aim = GetHitchance(Katarina.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
+    local hitchance, aim = GetHitchance(Irelia.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
         spot = aim + (myHero.pos - aim): Normalized() * -50
     
     
@@ -1004,7 +1010,7 @@ function CastETarget(unit)
         ECast = true
     end
     if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 0 and unit then
-        local hitchance2, aim2 = GetHitchance(Katarina.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
+        local hitchance2, aim2 = GetHitchance(Irelia.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
         local spot2 = aim2
         if aim2:To2D().onScreen and hitchance2 >= 2 then
             CastSpell(HK_E, spot2, E.Range, E.Delay*1000)
@@ -1024,7 +1030,7 @@ end
 
 function CastR(unit)
 	if Game.CanUseSpell(3) == 0 and GetDistanceSqr(unit) < R.Range * R.Range then
-        local hitchance, aim = GetHitchance(Katarina.pos,  unit, R.Range, R.Delay, R.Speed, R.Radius)
+        local hitchance, aim = GetHitchance(Irelia.pos,  unit, R.Range, R.Delay, R.Speed, R.Radius)
         if aim:To2D().onScreen then
             CastSpell(HK_R, unit, Q.Range, R.Delay * 1000)
         else
@@ -1042,18 +1048,18 @@ function GetDamage(spell, unit)
 
     if spell == HK_Q then
 		if Game.CanUseSpell(0) == 0 then
-			damage = CalcPhysicalDamage(Katarina ,unit, (Katarina:GetSpellData(_Q).level * 20 - 10) + AD * 0.7)
+			damage = CalcPhysicalDamage(Irelia ,unit, (Irelia:GetSpellData(_Q).level * 20 - 10) + AD * 0.7)
         end
     elseif spell == HK_W then
-        damage = CalcPhysicalDamage(Katarina, unit, (Katarina:GetSpellData(_W).level * 20 - 10) + (AD * 0.6) + (AP * 0.4))
+        damage = CalcPhysicalDamage(Irelia, unit, (Irelia:GetSpellData(_W).level * 20 - 10) + (AD * 0.6) + (AP * 0.4))
 
     elseif spell == HK_E then
         if Game.CanUseSpell(2) == 0 then
-            damage = CalcMagicalDamage(Katarina,unit, (Katarina:GetSpellData(_E).level * 40 + 40) + (AP * 0.8))
+            damage = CalcMagicalDamage(Irelia,unit, (Irelia:GetSpellData(_E).level * 40 + 40) + (AP * 0.8))
         end
     elseif spell == HK_R then
         if Game.CanUseSpell(3) == 0 then
-            damage = CalcMagicalDamage(Katarina, unit, (Katarina:GetSpellData(_R).level * 100 + 25) + (AP * 0.7))
+            damage = CalcMagicalDamage(Irelia, unit, (Irelia:GetSpellData(_R).level * 100 + 25) + (AP * 0.7))
         end
 
     end
@@ -1143,13 +1149,13 @@ Combo =  function()
 
     if targetR and Saga.Combo.UseR:Value() then 
         local number, list = GetEnemiesinRangeCount(targetR, 600)
-        local hitchance, aim = GetHitchance(Katarina.pos,  targetR, R.Range, 1.5+ping, 1000, 100)
+        local hitchance, aim = GetHitchance(Irelia.pos,  targetR, R.Range, 1.5+ping, 1000, 100)
         if number >= Saga.Misc.RCount:Value() or GetFullDamage(targetR) > targetR.health and not ECast then
             CastR(targetR)
         end
     end
     if ignitecast and igniteslot then
-        if targetE and Game.CanUseSpell(igniteslot) == 0 and GetDistanceSqr(Katarina, target) < 450 * 450 and 25 >= (100 * targetE.health / targetE.maxHealth) then
+        if targetE and Game.CanUseSpell(igniteslot) == 0 and GetDistanceSqr(Irelia, target) < 450 * 450 and 25 >= (100 * targetE.health / targetE.maxHealth) then
             Control.CastSpell(ignitecast, targetE)
         end
     end 
@@ -1202,7 +1208,7 @@ end
 
 
 Killsteal = function ()
-        local rActive = myHero.activeSpell.name == "KatarinaR"
+        local rActive = myHero.activeSpell.name == "IreliaR"
             for i = 1, TotalHeroes do
                 local enemy = _EnemyHeroes[i]
             --Q
@@ -1225,9 +1231,9 @@ function Flee()
     local unit
 	if Saga.Escape.UseQ:Value() then
 		if GetDistance(mousePos) > Q.Range then
-            unit = Katarina.pos + (mousePos - Katarina.pos):Normalized() * Q.Range
+            unit = Irelia.pos + (mousePos - Irelia.pos):Normalized() * Q.Range
         else
-            unit = Katarina.pos + (mousePos - Katarina.pos)
+            unit = Irelia.pos + (mousePos - Irelia.pos)
         end
         if Game.CanUseSpell(2) == 0 then
             for i = 1, SagaMCount() do 
@@ -1246,7 +1252,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.5.3"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.6.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
