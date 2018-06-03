@@ -4,7 +4,7 @@ if myHero.charName ~= 'Viktor' then return end
 require "MapPosition"
 
 Latency = Game.Latency
-    local PurpleBallBitch = myHero
+    local Viktor = myHero
     local ping = Game.Latency()/1000
     local itsReadyBitch = Game.CanUseSpell
     local BallHeroes = Game.HeroCount
@@ -15,10 +15,10 @@ Latency = Game.Latency
     local shit = Game.Object
     local cock = os.clock
 	local SagaIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
-	local Q = {Range = 650, Width = 50, Delay = 0.6 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 150, From = PurpleBallBitch}
-	local W = {Range = 700, Delay = 4 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = PurpleBallBitch}
-	local E = {Range = 1500, Width = 50, Radius = 50 ,Delay = .25 + ping, Speed = 780, Collision = false, aoe = false, Type = "line", From = PurpleBallBitch}
-	local R = {Range = 525, Delay = 0.25 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = PurpleBallBitch}
+	local Q = {Range = 650, Width = 50, Delay = 0.6 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 150, From = Viktor}
+	local W = {Range = 700, Delay = 4 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = Viktor}
+	local E = {Range = 1500, Width = 50, Radius = 50 ,Delay = .25 + ping, Speed = 780, Collision = false, aoe = false, Type = "line", From = Viktor}
+	local R = {Range = 525, Delay = 0.25 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = Viktor}
 	local Qdamage = {50, 95, 140, 185, 230}
     local visionTick = GetTickCount()
     local hugeballs = math.huge
@@ -33,14 +33,14 @@ Latency = Game.Latency
     local _EnemyHeroes
     local _OnVision = {}
     local TotalHeroes
-    local TEAM_ALLY = PurpleBallBitch.team
+    local TEAM_ALLY = Viktor.team
     local TEAM_ENEMY = 300 - TEAM_ALLY
     local myCounter = 1
     local IDListNumber
     local rDMG
     local finaldamage
-    local rlvl = PurpleBallBitch:GetSpellData(_R).level
-    local qlvl = PurpleBallBitch:GetSpellData(_Q).level
+    local rlvl = Viktor:GetSpellData(_R).level
+    local qlvl = Viktor:GetSpellData(_Q).level
     local dmgQ
     local qDMG
     local eBola
@@ -146,7 +146,7 @@ Latency = Game.Latency
     
     local sqrt = math.sqrt
 	GetDistanceSqr = function(p1, p2)
-		p2 = p2 or PurpleBallBitch
+		p2 = p2 or Viktor
 		p1 = p1.pos or p1
 		p2 = p2.pos or p2
 		
@@ -389,7 +389,7 @@ Latency = Game.Latency
             local delay = delay or 250
             local ticker = GetTickCount()
         
-            if castSpell.state == 0 and GetDistance(PurpleBallBitch.pos, pos) < range and ticker - castSpell.casting > delay + Latency() then
+            if castSpell.state == 0 and GetDistance(Viktor.pos, pos) < range and ticker - castSpell.casting > delay + Latency() then
                 castSpell.state = 1
                 castSpell.mouse = mousePos
                 castSpell.tick = ticker
@@ -554,7 +554,7 @@ LocalCallbackAdd(
 
             Killsteal()
 
-            if Saga.Combo.comboActive:Value() and PurpleBallBitch.attackData.state ~= 2 then
+            if Saga.Combo.comboActive:Value() and Viktor.attackData.state ~= 2 then
                 Combo()
             end
             if Saga.Harass.harassActive:Value() then
@@ -577,10 +577,10 @@ LocalCallbackAdd(
 
         LocalCallbackAdd(
     'Draw', function()
-        if Saga.Drawings.Q.Enabled:Value() then Draw.Circle(PurpleBallBitch.pos, Q.Range, 0, Saga.Drawings.Q.Color:Value()) end
-        if Saga.Drawings.W.Enabled:Value() then Draw.Circle(PurpleBallBitch.pos, W.Range, 0, Saga.Drawings.W.Color:Value()) end
-        if Saga.Drawings.E.Enabled:Value() then Draw.Circle(PurpleBallBitch.pos, E.Range, 0, Saga.Drawings.E.Color:Value()) end
-        if Saga.Drawings.R.Enabled:Value() then Draw.Circle(PurpleBallBitch.pos, R.Range, 0, Saga.Drawings.R.Color:Value()) end
+        if Saga.Drawings.Q.Enabled:Value() then Draw.Circle(Viktor.pos, Q.Range, 0, Saga.Drawings.Q.Color:Value()) end
+        if Saga.Drawings.W.Enabled:Value() then Draw.Circle(Viktor.pos, W.Range, 0, Saga.Drawings.W.Color:Value()) end
+        if Saga.Drawings.E.Enabled:Value() then Draw.Circle(Viktor.pos, E.Range, 0, Saga.Drawings.E.Color:Value()) end
+        if Saga.Drawings.R.Enabled:Value() then Draw.Circle(Viktor.pos, R.Range, 0, Saga.Drawings.R.Color:Value()) end
         
 
         for i= 1, TotalHeroes do
@@ -959,7 +959,7 @@ GetBestCastPosition = function (unit, spell)
 	local range = spell.Range and spell.Range - 15 or hugeballs
 	local radius = spell.Radius == 0 and 1 or (spell.Radius + unit.boundingRadius) - 4
 	local speed = spell.Speed or hugeballs
-	local from = spell.From or PurpleBallBitch
+	local from = spell.From or Viktor
 	local delay = spell.Delay + (0.07 + Latency() / 2000)
 	local collision = spell.Collision or false
 	
@@ -1033,7 +1033,7 @@ end
 
 GetBestCircularCastPos = function(spell, sTar, lst)
 	local average = {x = 0, z = 0, count = 0} 
-	local heroList = lst and lst[1] and (lst[1].type == PurpleBallBitch.type)
+	local heroList = lst and lst[1] and (lst[1].type == Viktor.type)
 	local range = spell.Range or 2000
 	local radius = spell.Radius or 50
 	
@@ -1080,7 +1080,7 @@ end
 end
 	
 	--
-	local point = Vector(average.x,PurpleBallBitch.pos.y,average.z)
+	local point = Vector(average.x,Viktor.pos.y,average.z)
 	--
 	if lst then
 	if inRange == #lst then 
