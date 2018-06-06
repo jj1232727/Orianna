@@ -1,6 +1,6 @@
 if myHero.charName ~= "Jinx" then return end
 local jinx = myHero
-local leftside = MapPosition:inLeftBase(myHero.pos)
+--local leftside = MapPosition:inLeftBase(myHero.pos)
 local finalrange
 local Tard_RangeCount = 0
 local castSpell = {state = 0, tick = GetTickCount(), casting = GetTickCount() - 1000, mouse = mousePos}
@@ -594,7 +594,7 @@ end
 
 LocalCallbackAdd("Load", function()
 TotalHeroes = GetEnemyHeroes()
-leftside = MapPosition:inLeftBase(myHero.pos)
+--leftside = MapPosition:inLeftBase(myHero.pos)
 Saga_Menu()
 if _G.EOWLoaded then
     SagaOrb = 1
@@ -1063,7 +1063,7 @@ Harass = function()
     local d = GetDistanceSqr(myHero.pos, target.pos)
     local hitchance, aim = GetHitchance(jinx.pos, target , W.Range, W.Delay, W.Speed, W.Width, true)
 	if d > finalrange * finalrange and aim ~= nil and validTarget(target) and myHero.attackData.state ~= 2 then
-		if SmanaManager(jinx) >= Saga.mana.manaH.Wmana:Value() and ItsReadyDumbAss(1) == 0 and hitchance >= 1 and aim:To2D().onScreen and minionCollision(target, jinx.pos, aim) == 0 then
+		if manaManager(jinx) >= Saga.mana.manaH.Wmana:Value() and ItsReadyDumbAss(1) == 0 and hitchance >= 1 and aim:To2D().onScreen and minionCollision(target, jinx.pos, aim) == 0 then
             CastSpell(HK_W, aim, W.Range, W.Delay*1000)
         end
     end
