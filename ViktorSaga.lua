@@ -17,7 +17,7 @@ Latency = Game.Latency
 	local SagaIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
 	local Q = {Range = 650, Width = 50, Delay = 0.6 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 150, From = Viktor}
 	local W = {Range = 700, Delay = 4 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = Viktor}
-	local E = {Range = 1500, Width = 50, Radius = 50 ,Delay = .25 + ping, Speed = 780, Collision = false, aoe = false, Type = "line", From = Viktor}
+	local E = {Range = 1050, Width = 50, Radius = 50 ,Delay = .25 + ping, Speed = 780, Collision = false, aoe = false, Type = "line", From = Viktor}
 	local R = {Range = 525, Delay = 0.25 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = Viktor}
 	local Qdamage = {50, 95, 140, 185, 230}
     local visionTick = GetTickCount()
@@ -749,26 +749,26 @@ LocalCallbackAdd(
     end
 
     CastE = function(target)
-        
+        local spot
+        local spot2
         if Game.CanUseSpell(2)== 0 and GetDistanceSqr(target) < E.Range * E.Range then
-            Epos = GetBestCastPosition(target, E)
-            local Distance = GetDistance(Epos) / 2
-            if GetDistanceSqr(Epos) > (E.Range*E.Range) then
-                DisableAttacks(true)
-                DisableMovement(true)
-                spot = myHero.pos + (Epos - myHero.pos):Normalized() * Distance * .8
-                DisableAttacks(false)
-                DisableMovement(false)
+            local Epos = GetBestCastPosition(target, E)
+            local Distance = GetDistance(Epos) + 250
+              --[[if  GetDistanceSqr(Epos) > E.Range * E.Range then
+                  Distance = GetDistance(Epos) - 500
+              end]]--
+
+            spot = target.pos
+            if target.pos:DistanceTo() > 525 then
+                spot2 = myHero.pos + (Epos - myHero.pos):Normalized() * 525
+            elseif target.pos:DistanceTo() < 250 then
+                spot2 = myHero.pos + (Epos - myHero.pos):Normalized() * 50
             else
-                DisableAttacks(true)
-                DisableMovement(true)
-                spot = myHero.pos + (Epos - myHero.pos):Normalized() * Distance
-                DisableAttacks(false)
-                DisableMovement(false)
-            end
-            
-            CastSpell(HK_E, spot, E.Range, E.Delay * 1000)DisableAttacks(false)
-            DisableMovement(false)
+                spot2 = myHero.pos + (Epos - myHero.pos):Normalized() * 250
+            end 
+
+            CastSpell(HK_E, spot, E.Range, E.Delay * 1000)
+            CastSpell(HK_E, spot2, E.Range, E.Delay * 1000)
         end
     end
 
@@ -1144,7 +1144,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Viktor", name = "Saga's Viktor: The Fellow Engineer"})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.0.2"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.1.2"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
