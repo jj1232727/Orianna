@@ -1361,7 +1361,8 @@ function()
 
 	Saga:MenuElement({id = "Harass", name = "Harass", type = MENU})
 	Saga.Harass:MenuElement({id = "UseQ", name = "Q", value = true})
-	Saga.Harass:MenuElement({id = "UseW", name = "W", value = true})
+    Saga.Harass:MenuElement({id = "UseW", name = "W", value = true})
+    Saga.Harass:MenuElement({id = "UseE", name = "E", value = true})
 
 	Saga:MenuElement({id = "Clear", name = "Clear", type = MENU})
 	Saga.Clear:MenuElement({id = "UseQ", name = "Q", value = true})
