@@ -874,7 +874,7 @@ end
 
 CastSpell = function(spell,pos,range,delay)
     
-    local range = range or hugeballs
+    local range = range or math.huge
     local delay = delay or 250
     local ticker = GetTickCount()
 
