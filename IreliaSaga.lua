@@ -13,7 +13,7 @@ local atan2 = math.atan2
 local MathPI = math.pi
 local _movementHistory = {}
 local clock = os.clock
-
+local stunCounter = 0
 local sHero = Game.Hero
 local TEAM_ALLY = Irelia.team
 local TEAM_ENEMY = 300 - TEAM_ALLY
@@ -44,6 +44,9 @@ local sqrt = math.sqrt
 local abs = math.abs 
 local deg = math.deg 
 local acos = math.acos 
+local e1clock = 0
+local stonecoldstunner = {}
+local Espot,Espot2, EUnit
 
 
 
@@ -475,25 +478,27 @@ end
 
 GetEnemiesinRangeCountQ = function(target,range)
     local closest = 9999
-    for i = 1, TotalHeroes do
-		local unit = _EnemyHeroes[i]
-		if unit.pos ~= nil and validTarget(unit) then
-			if  GetDistance(target.pos, unit.pos) <= closest and GotBuff(unit, "ireliamark") == 1 and GetDistanceSqr(myHero.pos, unit.pos) < 625 * 625 then
-                return unit
-            end
-        end
-    end
+    local cMinion
 		for i = 1, SagaMCount() do 
             local minion = SagasBitch(i)
             if minion and not minion.dead and minion.visible and minion.isTargetable then
-                if GetDistanceSqr(myHero.pos, minion.pos) < 625 * 625 and GetDistance(minion.pos, target.pos) < closest*closest and GotBuff(minion, "ireliamark") == 1 then
-                    return minion
+                if GetDistanceSqr(myHero.pos, target.pos) < 625 * 625 then 
+                    closest = GetDistanceSqr(myHero.pos, target.pos)
+                    cMinion = minion
                 end
-                if GetDistanceSqr(myHero.pos, minion.pos) < 625 * 625 and GetDistance(minion.pos, target.pos) < closest*closest and GetDamage(HK_Q, minion) > minion.health and minion.isEnemy then
-                    return minion
+                if GetDistanceSqr(minion.pos, target.pos) < 625 * 625 and GetDistanceSqr(minion.pos, target.pos) < 625 * 625 and GetDistanceSqr(myHero.pos, minion.pos) < closest * closest and GetDamage(HK_Q, minion) > minion.health then
+                    closest = GetDistanceSqr(minion.pos, target.pos)
+                    cMinion = minion
+                end
+                if GetDistanceSqr(minion.pos, target.pos) < 625 * 625 and GetDistanceSqr(minion.pos, target.pos) < 625 * 625 and GetDistanceSqr(myHero.pos, minion.pos) < closest * closest and GotBuff(minion, "ireliamark") == 1 then
+                    closest = GetDistanceSqr(minion.pos, target.pos)
+                    cMinion = minion
                 end
             end
+            
         end
+        return cMinion
+        
 
 end
 
@@ -654,13 +659,30 @@ LocalCallbackAdd("Tick", function()
             Draw.Circle(myHero.pos, E.Range - 150, 0, Saga.Drawings.E.Color:Value())
         end
 
-        if Saga.Drawings.Ehr.Enabled:Value() then 
-            Draw.Circle(myHero.pos, E.Range - 150, 0, Saga.Drawings.E.Color:Value())
-        end
-
         if Saga.Drawings.R.Enabled:Value() then 
             Draw.Circle(myHero.pos, R.Range, 0, Saga.Drawings.R.Color:Value())
         end
+
+
+        local unit = GetTarget(E.Range)
+        if unit and Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit) < E.Range * E.Range then
+            local  aim = GetPred(unit,math.huge,0.25+ Game.Latency()/1000)
+                Espot = unit.pos + (myHero.pos - unit.pos): Normalized() * 875
+            
+                Espot2 = aim + (myHero.pos - aim): Normalized() * -150
+            if  Espot2 and Espot then
+                if myHero:GetSpellData(_E).toggleState == 1 then
+                Draw.Circle(Espot, 50, 4, Saga.Drawings.R.Color:Value())
+                Draw.Circle(Espot2, 50, 4, Saga.Drawings.R.Color:Value())
+                Draw.Line(Espot:To2D().x, Espot:To2D().y, Espot2:To2D().x, Espot2:To2D().y, E.Width, Draw.Color(255, 155, 105, 240))
+                end
+
+                if myHero:GetSpellData(_E).toggleState == 0 then
+                    Draw.Circle(Espot2, 50, 4, Saga.Drawings.R.Color:Value())
+                end
+            end
+            end
+
 
         for i= 1, TotalHeroes do
             local hero = _EnemyHeroes[i]
@@ -681,7 +703,7 @@ LocalCallbackAdd("Tick", function()
 
     CastSpell = function(spell,pos,range,delay)
     
-        local range = range or hugeballs
+        local range = range or math.huge
         local delay = delay or 250
         local ticker = GetTickCount()
     
@@ -737,6 +759,62 @@ CastItBlindFuck = function(spell, pos, range, delay)
 		if ticker - castSpell.casting > Latency() then
 			Control.SetCursorPos(castSpell.mouse)
 			castSpell.state = 0
+		end
+	end
+end
+
+
+function GetDistance2D(p1,p2)
+    return sqrt((p2.x - p1.x)*(p2.x - p1.x) + (p2.y - p1.y)*(p2.y - p1.y))
+end
+
+local _OnWaypoint = {}
+function OnWaypoint(unit)
+	if _OnWaypoint[unit.networkID] == nil then _OnWaypoint[unit.networkID] = {pos = unit.posTo , speed = unit.ms, time = Game.Timer()} end
+	if _OnWaypoint[unit.networkID].pos ~= unit.posTo then 
+		-- print("OnWayPoint:"..unit.charName.." | "..math.floor(Game.Timer()))
+		_OnWaypoint[unit.networkID] = {startPos = unit.pos, pos = unit.posTo , speed = unit.ms, time = Game.Timer()}
+			DelayAction(function()
+				local time = (Game.Timer() - _OnWaypoint[unit.networkID].time)
+				local speed = GetDistance2D(_OnWaypoint[unit.networkID].startPos,unit.pos)/(Game.Timer() - _OnWaypoint[unit.networkID].time)
+				if speed > 1250 and time > 0 and unit.posTo == _OnWaypoint[unit.networkID].pos and GetDistance(unit.pos,_OnWaypoint[unit.networkID].pos) > 200 then
+					_OnWaypoint[unit.networkID].speed = GetDistance2D(_OnWaypoint[unit.networkID].startPos,unit.pos)/(Game.Timer() - _OnWaypoint[unit.networkID].time)
+					-- print("OnDash: "..unit.charName)
+				end
+			end,0.05)
+	end
+	return _OnWaypoint[unit.networkID]
+end
+
+function IsImmobileTarget(unit)
+	for i = 0, unit.buffCount do
+		local buff = unit:GetBuff(i)
+		if buff and (buff.type == 5 or buff.type == 11 or buff.type == 29 or buff.type == 24 or buff.name == "recall") and buff.count > 0 then
+			return true
+		end
+	end
+	return false	
+end
+
+function GetPred(unit,speed,delay)
+	local speed = speed or math.huge
+	local delay = delay or 0.25
+	local unitSpeed = unit.ms
+	if OnWaypoint(unit).speed > unitSpeed then unitSpeed = OnWaypoint(unit).speed end
+	if OnVision(unit).state == false then
+		local unitPos = unit.pos + Vector(unit.pos,unit.posTo):Normalized() * ((GetTickCount() - OnVision(unit).tick)/1000 * unitSpeed)
+		local predPos = unitPos + Vector(unit.pos,unit.posTo):Normalized() * (unitSpeed * (delay + (GetDistance(myHero.pos,unitPos)/speed)))
+		if GetDistance(unit.pos,predPos) > GetDistance(unit.pos,unit.posTo) then predPos = unit.posTo end
+		return predPos
+	else
+		if unitSpeed > unit.ms then
+			local predPos = unit.pos + Vector(OnWaypoint(unit).startPos,unit.posTo):Normalized() * (unitSpeed * (delay + (GetDistance(myHero.pos,unit.pos)/speed)))
+			if GetDistance(unit.pos,predPos) > GetDistance(unit.pos,unit.posTo) then predPos = unit.posTo end
+			return predPos
+		elseif IsImmobileTarget(unit) then
+			return unit.pos
+		else
+			return unit:GetPrediction(speed,delay)
 		end
 	end
 end
@@ -965,7 +1043,7 @@ CastQ =  function(unit)
 end
 
 CastW = function(target)
-    if target and Game.CanUseSpell(1) == 0 and GetDistanceSqr(target) < W.Range * W.Range then
+    if target and Game.CanUseSpell(1) == 0 and GetDistanceSqr(target) < W.Range  * W.Range then
         local hitchance, aim = GetHitchance(Irelia.pos, target , W.Range, W.Delay, W.Speed, W.Radius)
         if not charging and GotBuff(myHero, "ireliawdefense") == 0 then
             Control.KeyDown(HK_W)
@@ -973,17 +1051,16 @@ CastW = function(target)
             settime = clock()
             charging = true
         end
-        
-        if GotBuff(myHero, "ireliawdefense") == 1 and clock() - wClock >= .75 and hitchance >= 2 then
-            if (target.pos:DistanceTo() < 825) and charging then 
-                Control.SetCursorPos(aim)
-                Control.KeyUp(HK_W)
-                charging = false
-            end
-        elseif GotBuff(myHero, "ireliawdefense") == 1 and (target.pos:DistanceTo() > 700) and hitchance >= 2 and charging then
+        if GotBuff(myHero, "ireliawdefense") == 1 and (target.pos:DistanceTo() > 600) and hitchance >= 2 and charging then
             Control.SetCursorPos(aim)
             Control.KeyUp(HK_W)
             charging = false
+        elseif GotBuff(myHero, "ireliawdefense") == 1 and clock() - wClock >= .75 and hitchance >= 2 then
+            if (target.pos:DistanceTo() < 825) and charging then 
+                Control.SetCursorPos(aim)
+                CastSpell(HK_W,aim)
+                charging = false
+            end
         end
         
         
@@ -996,32 +1073,43 @@ end
 
 function CastETarget(unit)
     if unit and Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit) < E.Range * E.Range then
-    local spot
-    local hitchance, aim = GetHitchance(Irelia.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
-        spot = aim + (myHero.pos - aim): Normalized() * -50
+    local  aim = GetPred(unit,math.huge,0.25+ Game.Latency()/1000)
+        Espot = unit.pos + (myHero.pos - unit.pos): Normalized() * 875
     
-    
-    if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 1 and unit and spot then
+    EUnit = unit
+    if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).name == "IreliaE" and unit and Espot then
         if aim:To2D().onScreen then
-            CastSpell(HK_E, spot, E.Range, E.Delay*1000)
-        else
-            CastItBlindFuck(HK_E, spot, E.Range, E.Delay*1000)
+            CastSpell(HK_E, Espot)
         end
-        ECast = true
+        --ECast = true
+        --e1clock = clock()
     end
-    if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).toggleState == 0 and unit then
+    if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).name == "IreliaE2" and unit then
         local hitchance2, aim2 = GetHitchance(Irelia.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
-        local spot2 = aim2
+        Espot2 = aim + (myHero.pos - aim): Normalized() * -150
         if aim2:To2D().onScreen and hitchance2 >= 2 then
-            CastSpell(HK_E, spot2, E.Range, E.Delay*1000)
-        else
-            if hitchance2 >= 2 then
-            CastItBlindFuck(HK_E, spot2, E.Range, E.Delay*1000) end 
+            CastSpell(HK_E, Espot2)
         end
-        ECast = false
+        --ECast = false
         eClock = clock()
     end
     end
+end
+
+ESearch = function()
+    local stonedagger = nil
+    if stunCounter + 50 > GetTickCount() then return end
+	for i = 1, shitaround() do
+        local object = shit(i)
+		if object and object.valid and not object.dead and object.visible then
+			if object.charName == "Irelia_Base_E_Team_Indicator" and object.networkID ~= stonecoldstunner.networkID then
+                stonedagger = object
+			end
+		end
+    end
+    myCounter = 1
+    stonecoldstunner = stonedagger
+    stunCounter = GetTickCount()
 end
 
 
@@ -1032,9 +1120,9 @@ function CastR(unit)
 	if Game.CanUseSpell(3) == 0 and GetDistanceSqr(unit) < R.Range * R.Range then
         local hitchance, aim = GetHitchance(Irelia.pos,  unit, R.Range, R.Delay, R.Speed, R.Radius)
         if aim:To2D().onScreen then
-            CastSpell(HK_R, unit, Q.Range, R.Delay * 1000)
+            CastSpell(HK_R, unit)
         else
-            CastItBlindFuck(HK_R, unit, Q.Range, R.Delay * 1000)
+            CastItBlindFuck(HK_R, unit)
         end
 	end
 end
@@ -1091,9 +1179,10 @@ Combo =  function()
 
     if targetExt and Saga.Combo.UseQExt:Value() then
     local targetExtend = GetEnemiesinRangeCountQ(targetExt, 625)
-    if targetExtend and targetExt.pos:DistanceTo() >= 625 and GetDistance(targetExt.pos, targetExtend.pos) <= 625*625 then
-        CastQ(targetExtend)
-        return
+    if targetExtend then
+        if targetExt.pos:DistanceTo() >= 625 and GetDistance(targetExt.pos, targetExtend.pos) <= 625*625 then
+            CastQ(targetExtend)
+        end
     end
     end
 
@@ -1107,7 +1196,7 @@ Combo =  function()
     if target and Saga.Combo.UseQ:Value() then
         if Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 1 then
             CastQ(target)
-        elseif Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 0 and not ECast and clock() - eClock >= 1 then
+        elseif Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 0 and myHero:GetSpellData(_E).name == "IreliaE" and clock() - eClock >= 1 then
             CastQ(target)
         end
     end
@@ -1120,7 +1209,7 @@ Combo =  function()
         targetW = GetTarget(Q.Range)
     end
     if targetW and Saga.Combo.UseW:Value() then
-        if Game.CanUseSpell(0) ~= 0 and Game.CanUseSpell(2) ~= 0 and not ECast then
+        if Game.CanUseSpell(0) ~= 0 and Game.CanUseSpell(2) ~= 0 and myHero:GetSpellData(_E).name == "IreliaE" then
         CastW(targetW) end
     end
 
@@ -1150,7 +1239,7 @@ Combo =  function()
     if targetR and Saga.Combo.UseR:Value() then 
         local number, list = GetEnemiesinRangeCount(targetR, 600)
         local hitchance, aim = GetHitchance(Irelia.pos,  targetR, R.Range, 1.5+ping, 1000, 100)
-        if number >= Saga.Misc.RCount:Value() or GetFullDamage(targetR) > targetR.health and not ECast then
+        if number >= Saga.Misc.RCount:Value() or GetFullDamage(targetR) > targetR.health and myHero:GetSpellData(_E).name == "IreliaE" then
             CastR(targetR)
         end
     end
@@ -1167,12 +1256,21 @@ function Harass()
 	local target = GetTarget(Q.Range)
 	if target then
 		if Saga.Harass.UseQ:Value() then
-			CastQ(target)
+			if Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 1 then
+                CastQ(target)
+            elseif Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 0 and myHero:GetSpellData(_E).name == "IreliaE" and clock() - eClock >= 1 then
+                CastQ(target)
+            end
 		end
 
 		if Saga.Harass.UseW:Value() then
 			CastW(target)
         end
+
+        if Saga.Harass.UseE:Value() then
+			CastETarget(target)
+        end
+
 	end
 end
 
@@ -1252,7 +1350,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.6.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.0.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1302,11 +1400,6 @@ function()
     Saga.Drawings.E:MenuElement({id = "Enabled", name = "Enabled", value = false})       
     Saga.Drawings.E:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
     Saga.Drawings.E:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})	
-
-    Saga.Drawings:MenuElement({id = "Ehr", name = "Draw HurDur E mode range", type = MENU})
-    Saga.Drawings.Ehr:MenuElement({id = "Enabled", name = "Enabled", value = true})       
-    Saga.Drawings.Ehr:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
-    Saga.Drawings.Ehr:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})	
 	
     Saga.Drawings:MenuElement({id = "R", name = "Draw R range", type = MENU})
     Saga.Drawings.R:MenuElement({id = "Enabled", name = "Enabled", value = true})       
@@ -1315,4 +1408,3 @@ function()
 
 	
 end
-
