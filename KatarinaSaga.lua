@@ -171,12 +171,9 @@ GetDistanceSqr = function(p1, p2)
 	end
 
 GetEnemyHeroes = function()
-        if _EnemyHeroes then
-            return _EnemyHeroes
-        end
         _EnemyHeroes = {}
-        for i = 1, SagaHeroCount do
-            local unit = sHero(i)
+        for i = 1, Game.HeroCount() do
+            local unit = Game.Hero(i)
             if unit.team == TEAM_ENEMY  then
                 _EnemyHeroes[myCounter] = unit
                 myCounter = myCounter + 1
@@ -565,6 +562,12 @@ end
 
 LocalCallbackAdd("Tick", function()
     
+    if Game.Timer() > Saga.Rate.champion:Value() and #_EnemyHeroes == 0 then
+        TotalHeroes = GetEnemyHeroes()
+        print(TotalHeroes)
+    end
+    if #_EnemyHeroes == 0 then return end
+
     if isEvading then return end
     
     UpdateMovementHistory()
@@ -1315,7 +1318,10 @@ function()
 	Saga:MenuElement({id = "Misc", name = "R Settings", type = MENU})
 	Saga.Misc:MenuElement({id = "UseR", name = "R", value = true})
 	Saga.Misc:MenuElement({id = "RCount", name = "Use R on X targets", value = 3, min = 1, max = 5, step = 1})
-	
+    
+    Saga:MenuElement({id = "Rate", name = "Recache Rate", type = MENU})
+	Saga.Rate:MenuElement({id = "champion", name = "Value", value = 30, min = 1, max = 120, step = 1})
+
     Saga:MenuElement({id = "Escape", name = "RUN NINJA MODE (Flee)", type = MENU})
     Saga.Escape:MenuElement({id = "UseW", name = "W", value = true})
     Saga.Escape:MenuElement({id = "UseE", name = "E", value = true})

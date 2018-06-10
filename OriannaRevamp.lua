@@ -1,10 +1,9 @@
 if myHero.charName ~= 'Orianna' then return end
 
-require "DamageLib"
 require "MapPosition"
 
 	local ball_pos = nil
-	Latency = Game.Latency
+	local Latency = Game.Latency
 	local ping = Game.Latency()/1000
 	local AIOIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
 	local Q = {Range = 825, Width = 40, Delay = 0.40 + ping, Speed = 1400, Collision = false, aoe = false, Type = "circular", Scale = .5, Radius = 175, From = myHero}
@@ -18,7 +17,6 @@ require "MapPosition"
 	local Rdamage = {150, 225, 300}
 	local Timer  = Game.Timer
 	--local ballOnMe = GotBuff(myHero, "orianaghostself") == 1 or false
-	local mydmg = _G.getdmg
 	
 	local sHero = Game.Hero
 	local TEAM_ALLY = myHero.team
@@ -35,7 +33,7 @@ require "MapPosition"
 	local LocalCallbackAdd = Callback.Add
 	local _OnVision = {}
 	local visionTick = GetTickCount()
-	IsEvading = ExtLibEvade and ExtLibEvade.Evading
+	local IsEvading = ExtLibEvade and ExtLibEvade.Evading
 
 	--WR PREDICTION USAGE ---
     local _STUN = 5
@@ -45,7 +43,9 @@ require "MapPosition"
     local _CHARM = 22
     local _SUPRESS = 24        
     local _AIRBORNE = 30
-    local _SLEEP = 18
+	local _SLEEP = 18
+	
+
 	---WR PREDICTION USAGE -----
 	
 	-- WRPred functions
@@ -82,7 +82,11 @@ require "MapPosition"
 		onVision,
 		OnVisionF,
 		GetTarget, 
-		Priority, CastSpell, CastSpellMM
+		Priority, CastSpell, CastSpellMM,
+		IsImmobile,
+		QSearch
+
+
 
 
 		local DamageReductionTable = {
@@ -172,6 +176,7 @@ require "MapPosition"
 		
 		TotalHeroes = GetEnemyHeroes()
 		TotalAHeroes = GetAllyHeroes()
+		print(TotalHeroes)
 		if GotBuff(myHero, "ASSETS/Perks/Styles/Sorcery/ArcaneComet/ArcaneComet.lua") then
 			AC = true 
 		end
@@ -196,7 +201,12 @@ require "MapPosition"
 	LocalCallbackAdd(
     'Tick',
 	function()
+				
 				uBall()
+				if Game.Timer() > Saga.Rate.champion:Value() and #_EnemyHeroes == 0 then
+					TotalHeroes = GetEnemyHeroes()
+				end
+				if #_EnemyHeroes == 0 then return end
 				OnVisionF()
 				
 				if myHero.dead or Game.IsChatOpen() == true then return end
@@ -234,6 +244,7 @@ require "MapPosition"
 	if Saga.Drawings.Q.Enabled:Value() then Draw.Circle(myHero.pos, Q.Range, 0, Saga.Drawings.Q.Color:Value()) end
 	if Saga.Drawings.E.Enabled:Value() then Draw.Circle(myHero.pos, E.Range, 0, Saga.Drawings.E.Color:Value()) end
 	end)
+	
 
 	
 
@@ -496,10 +507,12 @@ end
 GetEnemyHeroes = function()
     if _EnemyHeroes then
         return _EnemyHeroes
-    end
+	end
+	print("---Enemies Loaded---")
+	print("     Saga Script   ")
 	_EnemyHeroes = {}
     for i = 1, Game.HeroCount() do
-        local unit = sHero(i)
+        local unit = Game.Hero(i)
         if unit.team == TEAM_ENEMY  then
             _EnemyHeroes[myCounter] = unit
 			myCounter = myCounter + 1
@@ -815,6 +828,46 @@ end
 		end
 	end
 
+	function CalcPhysicalDamage(source, target, amount)
+        local ArmorPenPercent = source.armorPenPercent
+        local ArmorPenFlat = (0.4 + target.levelData.lvl / 30) * source.armorPen
+        local BonusArmorPen = source.bonusArmorPenPercent
+      
+        if source.type == Obj_AI_Minion then
+          ArmorPenPercent = 1
+          ArmorPenFlat = 0
+          BonusArmorPen = 1
+        elseif source.type == Obj_AI_Turret then
+          ArmorPenFlat = 0
+          BonusArmorPen = 1
+          if source.charName:find("3") or source.charName:find("4") then
+            ArmorPenPercent = 0.25
+          else
+            ArmorPenPercent = 0.7
+          end
+        end
+      
+        if source.type == Obj_AI_Turret then
+          if target.type == Obj_AI_Minion then
+            amount = amount * 1.25
+            if string.ends(target.charName, "MinionSiege") then
+              amount = amount * 0.7
+            end
+            return amount
+          end
+        end
+      
+        local armor = target.armor
+        local bonusArmor = target.bonusArmor
+        local value = 100 / (100 + (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat)
+      
+        if armor < 0 then
+          value = 2 - 100 / (100 - armor)
+        elseif (armor * ArmorPenPercent) - (bonusArmor * (1 - BonusArmorPen)) - ArmorPenFlat < 0 then
+          value = 1
+        end
+        return math.max(0, math.floor(DamageReductionMod(source, target, PassivePercentMod(source, target, value) * amount, 1)))
+      end
 
 	Priority = function(charName)
         local p1 = {"Alistar", "Amumu", "Blitzcrank", "Braum", "Cho'Gath", "Dr. Mundo", "Garen", "Gnar", "Maokai", "Hecarim", "Jarvan IV", "Leona", "Lulu", "Malphite", "Nasus", "Nautilus", "Nunu", "Olaf", "Rammus", "Renekton", "Sejuani", "Shen", "Shyvana", "Singed", "Sion", "Skarner", "Taric", "TahmKench", "Thresh", "Volibear", "Warwick", "MonkeyKing", "Yorick", "Zac", "Poppy", "Ornn"}
@@ -974,7 +1027,7 @@ IsDashing = function(unit, spell)
 			--
 			local t1, p1, t2, p2, dist = VectorMovementCollision(startPos, endPos, dashSpeed, from, speed, (timer - startT) + delay)
 			t1, t2 = (t1 and 0 <= t1 and t1 <= (endT - timer - delay)) and t1 or nil, (t2 and 0 <= t2 and t2 <=  (endT - timer - delay)) and t2 or nil
-			local t = t1 and t2 and min(t1, t2) or t1 or t2
+			local t = t1 and t2 and max.min(t1, t2) or t1 or t2
 			--
 			if t then
 				Pos = t == t1 and Vector(p1.x, 0, p1.y) or Vector(p2.x, 0, p2.y)
@@ -990,6 +1043,7 @@ IsDashing = function(unit, spell)
 end
 
 IsImmobile = function(unit, spell)
+	
 	if unit.ms == 0 then return true, unit.pos, unit.pos end
 	local delay, radius, speed, from = spell.Delay, spell.Radius, spell.Speed, spell.From.pos
 	local debuff = {}
@@ -997,7 +1051,7 @@ IsImmobile = function(unit, spell)
 		local buff = unit:GetBuff(i)
 		if buff.duration > 0 then
 			
-			local ExtraDelay = speed == huge and 0 or (GetDistance(from, unit.pos) / speed)
+			local ExtraDelay = speed == math.huge and 0 or (GetDistance(from, unit.pos) / speed)
 			if buff.expireTime + (radius / unit.ms) > Timer() + delay + ExtraDelay then
 				debuff[buff.type] = true
 			end
@@ -1239,7 +1293,7 @@ end
 Saga_Menu =
 function()
 	Saga = MenuElement({type = MENU, id = "Orianna", name = "Saga's Orianna: Balls of Fury", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.6.2"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 3.0.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1274,20 +1328,23 @@ function()
 	Saga.Misc:MenuElement({id = "RCountpot", name = "Use R on X targets: Potential Kills", value = 2, min = 1, max = 5, step = 1})
 	Saga.Misc:MenuElement({id = "RCountpotpercent", name = "Min Health for potential kill", value = .3, min = .1, max = 1, step = .1, tooltip = "Recommend .3"})
 
+	Saga:MenuElement({id = "Rate", name = "Recache Rate", type = MENU})
+	Saga.Rate:MenuElement({id = "champion", name = "Value", value = 30, min = 1, max = 120, step = 1})
+
 	Saga:MenuElement({id = "Drawings", name = "Drawings", type = MENU})
 	Saga.Drawings:MenuElement({id = "Q", name = "Draw Q range", type = MENU})
-  Saga.Drawings.Q:MenuElement({id = "Enabled", name = "Enabled", value = true})       
-  Saga.Drawings.Q:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
-  Saga.Drawings.Q:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})
+	Saga.Drawings.Q:MenuElement({id = "Enabled", name = "Enabled", value = true})       
+	Saga.Drawings.Q:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
+	Saga.Drawings.Q:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})
 	--E
 	Saga.Drawings:MenuElement({id = "E", name = "Draw E range", type = MENU})
-  Saga.Drawings.E:MenuElement({id = "Enabled", name = "Enabled", value = true})       
-  Saga.Drawings.E:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
-  Saga.Drawings.E:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})	
-	
+	Saga.Drawings.E:MenuElement({id = "Enabled", name = "Enabled", value = true})       
+	Saga.Drawings.E:MenuElement({id = "Width", name = "Width", value = 1, min = 1, max = 5, step = 1})
+	Saga.Drawings.E:MenuElement({id = "Color", name = "Color", color = Draw.Color(200, 255, 255, 255)})	
 	--Ball
+
 	Saga.Drawings:MenuElement({id = "ballDraw", name = "Draw W and R on ball", type = MENU})
-  Saga.Drawings.ballDraw:MenuElement({id = "BallR", name = "Q Enabled", value = true})       
+    Saga.Drawings.ballDraw:MenuElement({id = "BallR", name = "Q Enabled", value = true})       
 	Saga.Drawings.ballDraw:MenuElement({id = "BallW", name = "W Enabled", value = true})
 	--[[
 	Saga:MenuElement({id = "BlockMenu", name = "Block R"})

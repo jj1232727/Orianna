@@ -43,6 +43,7 @@ Latency = Game.Latency
     local qlvl = Viktor:GetSpellData(_Q).level
     local dmgQ
     local qDMG
+    
     local eBola
     local isEvading = ExtLibEvade and ExtLibEvade.Evading
     local Tard_RangeCount = 0 -- <3 yaddle
@@ -216,9 +217,6 @@ Latency = Game.Latency
     end
     
     GetEnemyHeroes = function()
-        if _EnemyHeroes then
-            return _EnemyHeroes
-        end
         _EnemyHeroes = {}
         for i = 1, BallHeroes() do
             local unit = HeroBalls(i)
@@ -731,6 +729,10 @@ end
 LocalCallbackAdd(
     'Tick',
     function()
+            if Game.Timer() > Saga.Rate.champion:Value() and #_EnemyHeroes == 0 then
+                TotalHeroes = GetEnemyHeroes()
+            end
+            if #_EnemyHeroes == 0 then return end
             OnVisionF()
             UpdateMovementHistory()
             if myHero.dead or Game.IsChatOpen() == true  or isEvading then return end
@@ -764,7 +766,7 @@ LocalCallbackAdd(
         if Saga.Drawings.W.Enabled:Value() then Draw.Circle(Viktor.pos, W.Range, 0, Saga.Drawings.W.Color:Value()) end
         if Saga.Drawings.E.Enabled:Value() then Draw.Circle(Viktor.pos, E.Range + 650, 0, Saga.Drawings.E.Color:Value()) end
         if Saga.Drawings.R.Enabled:Value() then Draw.Circle(Viktor.pos, R.Range, 0, Saga.Drawings.R.Color:Value()) end
-
+        
         for i= 1, TotalHeroes do
             local hero = _EnemyHeroes[i]
 			local barPos = hero.hpBar
@@ -782,6 +784,7 @@ LocalCallbackAdd(
     end)
 
     Killsteal = function()
+        
         local QTarget = GetTarget(Q.Range)
         if QTarget and Saga.KillSteal.qKS:Value() then 
             if GetDamage(HK_Q, QTarget) > (QTarget.health + QTarget.shieldAD + QTarget.shieldAP) then
@@ -817,6 +820,7 @@ LocalCallbackAdd(
 
         local QTarget = GetTarget(Q.Range)
         if QTarget and Saga.Combo.UseQ:Value() then 
+            print(TotalHeroes)
             CastQ(QTarget)
         end
 
@@ -1346,7 +1350,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Viktor", name = "Saga's Viktor: The Fellow Engineer"})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.0.1"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.3.1"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1381,6 +1385,9 @@ function()
 
     Saga:MenuElement({id = "Misc", name = "R Settings", type = MENU})
     Saga.Misc:MenuElement({id = "RCount", name = "Use R on X targets", value = 3, min = 1, max = 5, step = 1})
+
+    Saga:MenuElement({id = "Rate", name = "Recache Rate", type = MENU})
+	Saga.Rate:MenuElement({id = "champion", name = "Value", value = 30, min = 1, max = 120, step = 1})
 
     Saga:MenuElement({id = "Drawings", name = "Drawings", type = MENU})
     Saga.Drawings:MenuElement({id = "Q", name = "Draw Q range", type = MENU})
