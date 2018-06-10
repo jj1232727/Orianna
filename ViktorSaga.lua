@@ -16,8 +16,8 @@ Latency = Game.Latency
     local cock = os.clock
 	local SagaIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
 	local Q = {Range = 650, Width = 50, Delay = 0.6 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 150, From = Viktor}
-	local W = {Range = 700, Delay = 4 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = Viktor}
-	local E = {Range = 1050, Width = 50, Radius = 50 ,Delay = .25 + ping, Speed = 780, Collision = false, aoe = false, Type = "line", From = Viktor}
+	local W = {Range = 700, Delay = 1 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = Viktor}
+	local E = {Range = 525, Width = 50, Radius = 50 ,Delay = 0, Speed = 780, Collision = false, aoe = false, Type = "line", From = Viktor}
 	local R = {Range = 525, Delay = 0.25 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = Viktor}
 	local Qdamage = {50, 95, 140, 185, 230}
     local visionTick = GetTickCount()
@@ -51,6 +51,9 @@ Latency = Game.Latency
     local wCounter = 0
     local hasball = false
     local _movementHistory = {}
+    local abs = math.abs 
+    local deg = math.deg 
+    local acos = math.acos
     
     
     --WR PREDICTION USAGE ---
@@ -381,6 +384,176 @@ Latency = Game.Latency
             end
          end
          
+         
+Angle = function(A, B)
+    local deltaPos = A - B
+    local angle = atan2(deltaPos.x, deltaPos.z) * 180 / MathPI
+    if angle < 0 then
+        angle = angle + 360
+    end
+    return angle
+end
+
+PredictReactionTime = function(unit, minimumReactionTime)
+    local reactionTime = minimumReactionTime
+    --If the target is auto attacking increase their reaction time by .15s - If using a skill use the remaining windup time
+    if unit.activeSpell and unit.activeSpell.valid then
+        local windupRemaining = unit.activeSpell.startTime + unit.activeSpell.windup - Timer()
+        if windupRemaining > 0 then
+            reactionTime = windupRemaining
+        end
+    end
+    --If the target is recalling and has been for over .25s then increase their reaction time by .25s
+    local isRecalling, recallDuration = GetRecallingData(unit)
+    if isRecalling and recallDuration > .25 then
+        reactionTime = .25
+    end
+    return reactionTime
+end
+
+GetSpellInterceptTime = function(startPos, endPos, delay, speed)
+    local interceptTime = Latency() / 2000 + delay + sqrt(GetDistanceSqr(startPos, endPos)) / speed
+    return interceptTime
+end
+
+UpdateMovementHistory =
+    function()
+    for i = 1, TotalHeroes do
+        local unit = sHero(i)
+        if not _movementHistory[unit.charName] then
+            _movementHistory[unit.charName] = {}
+            _movementHistory[unit.charName]['EndPos'] = unit.pathing.endPos
+            _movementHistory[unit.charName]['StartPos'] = unit.pathing.endPos
+            _movementHistory[unit.charName]['PreviousAngle'] = 0
+            _movementHistory[unit.charName]['ChangedAt'] = SagaTimer()
+        end
+
+        if
+            _movementHistory[unit.charName]['EndPos'].x ~= unit.pathing.endPos.x or _movementHistory[unit.charName]['EndPos'].y ~= unit.pathing.endPos.y or
+                _movementHistory[unit.charName]['EndPos'].z ~= unit.pathing.endPos.z
+         then
+            _movementHistory[unit.charName]['PreviousAngle'] =
+                Angle(
+                Vector(_movementHistory[unit.charName]['StartPos'].x, _movementHistory[unit.charName]['StartPos'].y, _movementHistory[unit.charName]['StartPos'].z),
+                Vector(_movementHistory[unit.charName]['EndPos'].x, _movementHistory[unit.charName]['EndPos'].y, _movementHistory[unit.charName]['EndPos'].z)
+            )
+            _movementHistory[unit.charName]['EndPos'] = unit.pathing.endPos
+            _movementHistory[unit.charName]['StartPos'] = unit.pos
+            _movementHistory[unit.charName]['ChangedAt'] = SagaTimer()
+        end
+    end
+end
+
+PredictUnitPosition = function(unit, delay)
+    local predictedPosition = unit.pos
+    local timeRemaining = delay
+    local pathNodes = GetPathNodes(unit)
+    for i = 1, #pathNodes - 1 do
+        local nodeDistance = sqrt(GetDistanceSqr(pathNodes[i], pathNodes[i + 1]))
+        local targetMs = GetTargetMS(unit)
+        local nodeTraversalTime = nodeDistance / targetMs
+        if timeRemaining > nodeTraversalTime then
+            --This node of the path will be completed before the delay has finished. Move on to the next node if one remains
+            timeRemaining = timeRemaining - nodeTraversalTime
+            predictedPosition = pathNodes[i + 1]
+        else
+            local directionVector = (pathNodes[i + 1] - pathNodes[i]):Normalized()
+            predictedPosition = pathNodes[i] + directionVector * targetMs * timeRemaining
+            break
+        end
+    end
+    return predictedPosition
+end
+
+GetPathNodes = function(unit)
+    local nodes = {}
+    nodes[myCounter] = unit.pos
+    if unit.pathing.hasMovePath then
+        for i = unit.pathing.pathIndex, unit.pathing.pathCount do
+            local path = unit:GetPath(i)
+            myCounter = myCounter + 1
+            nodes[myCounter] = path
+        end
+    end
+    myCounter = 1
+    return nodes, #nodes
+end
+
+GetImmobileTime = function(unit)
+    local duration = 0
+    for i = 0, unit.buffCount do
+        local buff = unit:GetBuff(i)
+        if
+            buff.count > 0 and buff.duration > duration and
+                (buff.type == 5 or buff.type == 8 or buff.type == 21 or buff.type == 22 or buff.type == 24 or buff.type == 11 or buff.type == 29 or buff.type == 30 or buff.type == 39)
+         then
+            duration = buff.duration
+        end
+    end
+    return duration
+end
+
+GetTargetMS = function(target)
+    local ms = target.pathing.isDashing and target.pathing.dashSpeed or target.ms
+    return ms
+end
+
+UnitMovementBounds = function(unit, delay, reactionTime)
+    local startPosition = PredictUnitPosition(unit, delay)
+    local radius = 0
+    local deltaDelay = delay - reactionTime - GetImmobileTime(unit)
+    if (deltaDelay > 0) then
+        radius = GetTargetMS(unit) * deltaDelay
+    end
+    return startPosition, radius
+end
+
+GetRecallingData = function(unit)
+    for i = 0, unit.buffCount do
+        local buff = unit:GetBuff(i)
+        if buff and buff.name == 'recall' and buff.duration > 0 then
+            return true, Timer() - buff.startTime
+        end
+    end
+    return false
+end
+
+GetHitchance = function(source, target, range, delay, speed, radius)
+    local hitChance = 1
+    local aimPosition = PredictUnitPosition(target, delay + sqrt(GetDistanceSqr(source, target.pos)) / speed)
+    local interceptTime = GetSpellInterceptTime(source, aimPosition, delay, speed)
+    local reactionTime = PredictReactionTime(target, .1)
+    --If they just now changed their path then assume they will keep it for at least a short while... slightly higher chance
+    if _movementHistory and _movementHistory[target.charName] and Timer() - _movementHistory[target.charName]['ChangedAt'] < .25 then
+        hitChance = 2
+    end
+    --If they are standing still give a higher accuracy because they have to take actions to react to it
+    if not target.pathing or not target.pathing.hasMovePath then
+        hitChance = 2
+    end
+    local origin, movementRadius = UnitMovementBounds(target, interceptTime, reactionTime)
+    --Our spell is so wide or the target so slow or their reaction time is such that the spell will be nearly impossible to avoid
+    if movementRadius - target.boundingRadius <= radius / 2 then
+        origin, movementRadius = UnitMovementBounds(target, interceptTime, 0)
+        if movementRadius - target.boundingRadius <= radius / 2 then
+            hitChance = 4
+        else
+            hitChance = 3
+        end
+    end
+    --If they are casting a spell then the accuracy will be fairly high. if the windup is longer than our delay then it's quite likely to hit.
+    --Ideally we would predict where they will go AFTER the spell finishes but that's beyond the scope of this prediction
+    if target.activeSpell and target.activeSpell.valid then
+        if target.activeSpell.startTime + target.activeSpell.windup - Timer() >= delay then
+            hitChance = 5
+        else
+            hitChance = 3
+        end
+    end
+    --Check for out of range
+    
+    return hitChance, aimPosition
+end
 
         local castSpell = {state = 0, tick = GetTickCount(), casting = GetTickCount() - 1000, mouse = mousePos}
         CastSpell = function(spell,pos,range,delay)
@@ -495,6 +668,16 @@ end
             return #inRadius, inRadius
         end
 
+        IsFacing = function(unit)
+            local V = Vector((unit.pos - myHero.pos))
+            local D = Vector(unit.dir)
+            local Angle = 180 - deg(acos(V*D/(V:Len()*D:Len())))
+            if abs(Angle) < 80 then 
+                return true  
+            end
+            return false
+        end
+
         function GetDamage(spell, unit)
             local damage = 0
             local AD = myHero.totalDamage
@@ -579,9 +762,8 @@ LocalCallbackAdd(
     'Draw', function()
         if Saga.Drawings.Q.Enabled:Value() then Draw.Circle(Viktor.pos, Q.Range, 0, Saga.Drawings.Q.Color:Value()) end
         if Saga.Drawings.W.Enabled:Value() then Draw.Circle(Viktor.pos, W.Range, 0, Saga.Drawings.W.Color:Value()) end
-        if Saga.Drawings.E.Enabled:Value() then Draw.Circle(Viktor.pos, E.Range, 0, Saga.Drawings.E.Color:Value()) end
+        if Saga.Drawings.E.Enabled:Value() then Draw.Circle(Viktor.pos, E.Range + 650, 0, Saga.Drawings.E.Color:Value()) end
         if Saga.Drawings.R.Enabled:Value() then Draw.Circle(Viktor.pos, R.Range, 0, Saga.Drawings.R.Color:Value()) end
-        
 
         for i= 1, TotalHeroes do
             local hero = _EnemyHeroes[i]
@@ -596,7 +778,7 @@ LocalCallbackAdd(
 					Draw.Text("KILL NOW", 30, hero.pos2D.x - 50, hero.pos2D.y + 50,Draw.Color(200, 255, 87, 51))				
                 end
 				end
-				end
+                end
     end)
 
     Killsteal = function()
@@ -643,7 +825,7 @@ LocalCallbackAdd(
             CastW(WTarget)
         end
 
-        local ETarget = GetTarget(E.Range)
+        local ETarget = GetTarget(E.Range + 650)
         if ETarget and Saga.Combo.UseE:Value() then 
             CastE(ETarget)
         end
@@ -655,11 +837,13 @@ LocalCallbackAdd(
             CastQ(QTarget)
         end
 
-        local ETarget = GetTarget(E.Range)
+        local ETarget = GetTarget(E.Range + 650)
         if ETarget and Saga.Harass.UseE:Value() then 
             CastE(ETarget)
         end
     end
+
+
 
     LaneClear = function()
         if Game.CanUseSpell(0) == 0 then
@@ -668,7 +852,7 @@ LocalCallbackAdd(
             if minion.pos:DistanceTo() <= Q.Range and minion.isEnemy and not minion.dead and Game.CanUseSpell(0) == 0 then
                 dmgQ = GetDamage(HK_Q, minion)
                 if dmgQ >= minion.health and Saga.Clear.UseQ:Value() then
-                    CastSpell(HK_Q,minion, Q.Range, Q.Delay*1000)
+                    CastSpell(HK_Q,minion, Q.Range)
                 end
                 dmgE = GetDamage(HK_E, minion)
                 if dmgE >= minion.health and Saga.Clear.UseE:Value() then
@@ -706,7 +890,7 @@ LocalCallbackAdd(
                 if minion.pos:DistanceTo() <= Q.Range and Saga.Lasthit.UseQ:Value() and minion.isEnemy and not minion.dead and Game.CanUseSpell(0) == 0 then
                     dmgQ = GetDamage(HK_Q, minion)
                     if dmgQ >= minion.health then
-                        CastSpell(HK_Q,minion, Q.Range, Q.Delay*1000)
+                        CastSpell(HK_Q,minion, Q.Range)
                     end
                 end
             end
@@ -725,50 +909,68 @@ LocalCallbackAdd(
     CastW = function(target)
         local number, enemies = GetEnemiesinRangeCount(target, W.Radius)
         if Game.CanUseSpell(1) == 0 and GetDistanceSqr(target) < W.Range * W.Range then
-            Wpos = GetBestCircularCastPos(W, target, enemies)
+            local Wpos = GetBestCircularCastPos(W, target, enemies)
+            
             local Dist = GetDistanceSqr(Wpos, myHero.pos) - target.boundingRadius*target.boundingRadius
             Wpos = myHero.pos + (Wpos - myHero.pos):Normalized()*(GetDistance(Wpos, myHero.pos) + 0.5*target.boundingRadius)
             if Dist > (W.Range*W.Range) then
                 Wpos = myHero.pos + (Wpos - myHero.pos):Normalized()*W.Range
+                dWPOS = Wpos
+                wt = target
             end
-            Control.CastSpell(HK_W, Wpos)
+            
+            CastSpell(HK_W, Wpos, W.Range)
         end
+        
     end
 
     CastR = function(target)
         local number, enemies = GetEnemiesinRangeCount(target, R.Radius)
         if Game.CanUseSpell(3) == 0 and GetDistanceSqr(target) < R.Range * R.Range then
-            Rpos = GetBestCircularCastPos(R, target, enemies)
+            local Rpos = GetBestCircularCastPos(R, target, enemies)
             local Dist = GetDistanceSqr(Rpos, myHero.pos) - target.boundingRadius*target.boundingRadius
             Rpos = myHero.pos + (Rpos - myHero.pos):Normalized()*(GetDistance(Rpos, myHero.pos) + 0.5*target.boundingRadius)
             if Dist > (R.Range*R.Range) then
                 Rpos = myHero.pos + (Rpos - myHero.pos):Normalized()*W.Range
             end
-            Control.CastSpell(HK_R, Rpos)
+            CastSpell(HK_R, Rpos)
         end
     end
 
     CastE = function(target)
-        local spot
-        local spot2
-        if Game.CanUseSpell(2)== 0 and GetDistanceSqr(target) < E.Range * E.Range then
-            local Epos = GetBestCastPosition(target, E)
-            local Distance = GetDistance(Epos) + 250
+        --local spot2
+        if Game.CanUseSpell(2)== 0 and GetDistance(target) < E.Range + 500  * E.Range + 500 then
+            local spot
+            local HC, Epos =  GetHitchance(myHero, target, E.Range, E.Delay, E.Speed, E.Width, false)
+            
+            --local Distance = GetDistance(Epos) + 250
               --[[if  GetDistanceSqr(Epos) > E.Range * E.Range then
                   Distance = GetDistance(Epos) - 500
               end]]--
-
-            spot = target.pos
-            if target.pos:DistanceTo() > 525 then
-                spot2 = myHero.pos + (Epos - myHero.pos):Normalized() * 525
-            elseif target.pos:DistanceTo() < 250 then
-                spot2 = myHero.pos + (Epos - myHero.pos):Normalized() * 50
-            else
-                spot2 = myHero.pos + (Epos - myHero.pos):Normalized() * 250
-            end 
-
-            CastSpell(HK_E, spot, E.Range, E.Delay * 1000)
-            CastSpell(HK_E, spot2, E.Range, E.Delay * 1000)
+                --
+                local d = GetDistance(target) / 2
+              spot = target.pos + (myHero.pos - target.pos): Normalized() * E.Range
+              spot2 = Vector(target.pos):Extended(Vector(Epos),200) 
+            if target.pos:DistanceTo() < E.Range then
+                spot = myHero.pos + (target.pos - myHero.pos):Normalized() * d
+                spot2 = Vector(target.pos):Extended(Vector(Epos), -100)
+            end
+            local nE = E.Range - 100
+            local Dist = GetDistanceSqr(spot2, myHero.pos) - target.boundingRadius*target.boundingRadius
+            --[[local nE = E.Range - 300
+            if Dist > E.Range + 650 then
+                print("true")
+                spot = myHero.pos + (target.pos - myHero.pos):Normalized() * nE
+            end]]--
+            if target.pos:DistanceTo() < spot2:DistanceTo() then
+                local nR = E.Range + 1
+                spot2 = myHero.pos + (spot2 - myHero.pos): Normalized() * nR
+            end
+            if HC >= 2 and spot and spot2 then 
+                CastSpell(HK_E, spot, E.Range) 
+                CastSpell(HK_E, spot2, E.Range)
+                
+            end
         end
     end
 
@@ -1144,7 +1346,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Viktor", name = "Saga's Viktor: The Fellow Engineer"})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.1.2"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.0.1"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
