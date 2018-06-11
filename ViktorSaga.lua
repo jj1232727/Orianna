@@ -820,7 +820,6 @@ LocalCallbackAdd(
 
         local QTarget = GetTarget(Q.Range)
         if QTarget and Saga.Combo.UseQ:Value() then 
-            print(TotalHeroes)
             CastQ(QTarget)
         end
 
