@@ -178,9 +178,6 @@ GetDistanceSqr = function(p1, p2)
 	end
 
 GetEnemyHeroes = function()
-        if _EnemyHeroes then
-            return _EnemyHeroes
-        end
         _EnemyHeroes = {}
         for i = 1, SagaHeroCount do
             local unit = sHero(i)
@@ -612,6 +609,11 @@ end
 
 LocalCallbackAdd("Tick", function()
     
+    if Game.Timer() > Saga.Rate.champion:Value() and #_EnemyHeroes == 0 then
+        TotalHeroes = GetEnemyHeroes()
+    end
+    if #_EnemyHeroes == 0 then return end
+
     if isEvading then return end
     
     UpdateMovementHistory()
@@ -1044,23 +1046,19 @@ end
 
 CastW = function(target)
     if target and Game.CanUseSpell(1) == 0 and GetDistanceSqr(target) < W.Range  * W.Range then
-        local hitchance, aim = GetHitchance(Irelia.pos, target , W.Range, W.Delay, W.Speed, W.Radius)
+        local hitchance, aim = GetHitchance(Irelia, target , W.Range, W.Delay, W.Speed, W.Radius)
         if not charging and GotBuff(myHero, "ireliawdefense") == 0 then
             Control.KeyDown(HK_W)
             wClock = clock()
             settime = clock()
             charging = true
         end
-        if GotBuff(myHero, "ireliawdefense") == 1 and (target.pos:DistanceTo() > 600) and hitchance >= 2 and charging then
-            Control.SetCursorPos(aim)
-            Control.KeyUp(HK_W)
+        if GotBuff(myHero, "ireliawdefense") == 1 and (target.pos:DistanceTo() > 600) then
+            CastSpell(HK_W, aim)
             charging = false
-        elseif GotBuff(myHero, "ireliawdefense") == 1 and clock() - wClock >= .75 and hitchance >= 2 then
-            if (target.pos:DistanceTo() < 825) and charging then 
-                Control.SetCursorPos(aim)
+        elseif GotBuff(myHero, "ireliawdefense") == 1 and clock() - wClock >= .5 and target.pos:DistanceTo() < 825then
                 CastSpell(HK_W,aim)
                 charging = false
-            end
         end
         
         
@@ -1081,11 +1079,9 @@ function CastETarget(unit)
         if aim:To2D().onScreen then
             CastSpell(HK_E, Espot)
         end
-        --ECast = true
-        --e1clock = clock()
     end
     if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).name == "IreliaE2" and unit then
-        local hitchance2, aim2 = GetHitchance(Irelia.pos, unit , E.Range, E.Delay, E.Speed, E.Radius)
+        local hitchance2, aim2 = GetHitchance(Irelia, unit , E.Range, E.Delay, E.Speed, E.Radius)
         Espot2 = aim + (myHero.pos - aim): Normalized() * -150
         if aim2:To2D().onScreen and hitchance2 >= 2 then
             CastSpell(HK_E, Espot2)
@@ -1117,12 +1113,10 @@ end
 
 
 function CastR(unit)
-	if Game.CanUseSpell(3) == 0 and GetDistanceSqr(unit) < R.Range * R.Range then
-        local hitchance, aim = GetHitchance(Irelia.pos,  unit, R.Range, R.Delay, R.Speed, R.Radius)
-        if aim:To2D().onScreen then
+	if Game.CanUseSpell(3) == 0 and GetDistanceSqr(unit) < R.Range * R.Range and not myHero.pathing.isDashing then
+        local hitchance, aim = GetHitchance(Irelia,  unit, R.Range, R.Delay, R.Speed, R.Radius)
+        if aim:To2D().onScreen and hitchance >= 2 then
             CastSpell(HK_R, unit)
-        else
-            CastItBlindFuck(HK_R, unit)
         end
 	end
 end
@@ -1223,7 +1217,7 @@ Combo =  function()
         targetE = GetTarget(E.Range)
     end
 
-    if targetE and Saga.Combo.UseE:Value() then 
+    if targetE and Saga.Combo.UseE:Value() and not myHero.pathing.isDashing then 
         CastETarget(targetE)
 
     end
@@ -1236,10 +1230,10 @@ Combo =  function()
         targetR = GetTarget(R.Range)
     end
 
-    if targetR and Saga.Combo.UseR:Value() then 
+    if targetR and Saga.Combo.UseR:Value() and not myHero.pathing.isDashing then 
         local number, list = GetEnemiesinRangeCount(targetR, 600)
-        local hitchance, aim = GetHitchance(Irelia.pos,  targetR, R.Range, 1.5+ping, 1000, 100)
-        if number >= Saga.Misc.RCount:Value() or GetFullDamage(targetR) > targetR.health and myHero:GetSpellData(_E).name == "IreliaE" then
+        local hitchance, aim = GetHitchance(Irelia,  targetR, R.Range, 1.5+ping, 1000, 100)
+        if number >= Saga.Misc.RCount:Value() and hitchance >= 2 or GetFullDamage(targetR) > targetR.health and myHero:GetSpellData(_E).name == "IreliaE" and hitchance >= 2 then
             CastR(targetR)
         end
     end
@@ -1256,7 +1250,7 @@ function Harass()
 	local target = GetTarget(Q.Range)
 	if target then
 		if Saga.Harass.UseQ:Value() then
-			if Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 1 then
+			if Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 1 and myHero:GetSpellData(_E).name == "IreliaE" then
                 CastQ(target)
             elseif Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 0 and myHero:GetSpellData(_E).name == "IreliaE" and clock() - eClock >= 1 then
                 CastQ(target)
@@ -1267,7 +1261,7 @@ function Harass()
 			CastW(target)
         end
 
-        if Saga.Harass.UseE:Value() then
+        if Saga.Harass.UseE:Value() and not myHero.pathing.isDashing then
 			CastETarget(target)
         end
 
@@ -1350,7 +1344,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.0.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.1.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1379,7 +1373,10 @@ function()
 	Saga:MenuElement({id = "Misc", name = "R Settings", type = MENU})
 	Saga.Misc:MenuElement({id = "UseR", name = "R", value = true})
 	Saga.Misc:MenuElement({id = "RCount", name = "Use R on X targets", value = 2, min = 1, max = 5, step = 1})
-	
+    
+    Saga:MenuElement({id = "Rate", name = "Recache Rate", type = MENU})
+	Saga.Rate:MenuElement({id = "champion", name = "Value", value = 30, min = 1, max = 120, step = 1})
+
     Saga:MenuElement({id = "Escape", name = "RUN NINJA MODE (Flee)", type = MENU})
     Saga.Escape:MenuElement({id = "UseQ", name = "Q", value = true})
 
