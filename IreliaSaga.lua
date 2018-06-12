@@ -179,8 +179,8 @@ GetDistanceSqr = function(p1, p2)
 
 GetEnemyHeroes = function()
         _EnemyHeroes = {}
-        for i = 1, SagaHeroCount do
-            local unit = sHero(i)
+        for i = 1, Game.HeroCount() do
+            local unit = Game.Hero(i)
             if unit.team == TEAM_ENEMY  then
                 _EnemyHeroes[myCounter] = unit
                 myCounter = myCounter + 1
@@ -665,7 +665,7 @@ LocalCallbackAdd("Tick", function()
             Draw.Circle(myHero.pos, R.Range, 0, Saga.Drawings.R.Color:Value())
         end
 
-
+        
         local unit = GetTarget(E.Range)
         if unit and Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit) < E.Range * E.Range then
             local  aim = GetPred(unit,math.huge,0.25+ Game.Latency()/1000)
@@ -1077,14 +1077,14 @@ function CastETarget(unit)
     EUnit = unit
     if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).name == "IreliaE" and unit and Espot then
         if aim:To2D().onScreen then
-            CastSpell(HK_E, Espot)
+            CastSpell(HK_E, Espot, E.Range, E.Delay * 1000)
         end
     end
     if Game.CanUseSpell(2) == 0 and myHero:GetSpellData(_E).name == "IreliaE2" and unit then
         local hitchance2, aim2 = GetHitchance(Irelia, unit , E.Range, E.Delay, E.Speed, E.Radius)
         Espot2 = aim + (myHero.pos - aim): Normalized() * -150
         if aim2:To2D().onScreen and hitchance2 >= 2 then
-            CastSpell(HK_E, Espot2)
+            CastSpell(HK_E, Espot2, E.Range, E.Delay * 1000)
         end
         --ECast = false
         eClock = clock()
@@ -1344,7 +1344,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.1.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.2.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
