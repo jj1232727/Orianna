@@ -1403,7 +1403,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Viktor", name = "Saga's Viktor: The Fellow Engineer"})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.3.1"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.4.2"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
