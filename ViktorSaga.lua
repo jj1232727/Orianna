@@ -15,9 +15,9 @@ Latency = Game.Latency
     local shit = Game.Object
     local cock = os.clock
 	local SagaIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
-	local Q = {Range = 650, Width = 50, Delay = 0.6 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 150, From = Viktor}
-	local W = {Range = 700, Delay = 1 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = Viktor}
-	local E = {Range = 525, Width = 50, Radius = 50 ,Delay = 0, Speed = 780, Collision = false, aoe = false, Type = "line", From = Viktor}
+	local Q = {Range = 650, Width = 50, Delay = 0.25, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 150, From = Viktor}
+	local W = {Range = 700, Delay = 1, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = Viktor}
+	local E = {Range = 525, Width = 50, Radius = 50 ,Delay = .538, Speed = 780, Collision = false, aoe = false, Type = "line", From = Viktor}
 	local R = {Range = 525, Delay = 0.25 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = Viktor}
 	local Qdamage = {50, 95, 140, 185, 230}
     local visionTick = GetTickCount()
@@ -164,6 +164,60 @@ Latency = Game.Latency
 		return sqrt(GetDistanceSqr(p1, p2))
     end
     
+    function GetDistance2D(p1,p2)
+        return sqrt((p2.x - p1.x)*(p2.x - p1.x) + (p2.y - p1.y)*(p2.y - p1.y))
+    end
+    
+    local _OnWaypoint = {}
+    function OnWaypoint(unit)
+        if _OnWaypoint[unit.networkID] == nil then _OnWaypoint[unit.networkID] = {pos = unit.posTo , speed = unit.ms, time = Game.Timer()} end
+        if _OnWaypoint[unit.networkID].pos ~= unit.posTo then 
+            -- print("OnWayPoint:"..unit.charName.." | "..math.floor(Game.Timer()))
+            _OnWaypoint[unit.networkID] = {startPos = unit.pos, pos = unit.posTo , speed = unit.ms, time = Game.Timer()}
+                DelayAction(function()
+                    local time = (Game.Timer() - _OnWaypoint[unit.networkID].time)
+                    local speed = GetDistance2D(_OnWaypoint[unit.networkID].startPos,unit.pos)/(Game.Timer() - _OnWaypoint[unit.networkID].time)
+                    if speed > 1250 and time > 0 and unit.posTo == _OnWaypoint[unit.networkID].pos and GetDistance(unit.pos,_OnWaypoint[unit.networkID].pos) > 200 then
+                        _OnWaypoint[unit.networkID].speed = GetDistance2D(_OnWaypoint[unit.networkID].startPos,unit.pos)/(Game.Timer() - _OnWaypoint[unit.networkID].time)
+                        -- print("OnDash: "..unit.charName)
+                    end
+                end,0.05)
+        end
+        return _OnWaypoint[unit.networkID]
+    end
+    
+    function IsImmobileTarget(unit)
+        for i = 0, unit.buffCount do
+            local buff = unit:GetBuff(i)
+            if buff and (buff.type == 5 or buff.type == 11 or buff.type == 29 or buff.type == 24 or buff.name == "recall") and buff.count > 0 then
+                return true
+            end
+        end
+        return false	
+    end
+    
+    function GetPred(unit,speed,delay)
+        local speed = speed or math.huge
+        local delay = delay or 0.25
+        local unitSpeed = unit.ms
+        if OnWaypoint(unit).speed > unitSpeed then unitSpeed = OnWaypoint(unit).speed end
+        if OnVision(unit).state == false then
+            local unitPos = unit.pos + Vector(unit.pos,unit.posTo):Normalized() * ((GetTickCount() - OnVision(unit).tick)/1000 * unitSpeed)
+            local predPos = unitPos + Vector(unit.pos,unit.posTo):Normalized() * (unitSpeed * (delay + (GetDistance(myHero.pos,unitPos)/speed)))
+            if GetDistance(unit.pos,predPos) > GetDistance(unit.pos,unit.posTo) then predPos = unit.posTo end
+            return predPos
+        else
+            if unitSpeed > unit.ms then
+                local predPos = unit.pos + Vector(OnWaypoint(unit).startPos,unit.posTo):Normalized() * (unitSpeed * (delay + (GetDistance(myHero.pos,unit.pos)/speed)))
+                if GetDistance(unit.pos,predPos) > GetDistance(unit.pos,unit.posTo) then predPos = unit.posTo end
+                return predPos
+            elseif IsImmobileTarget(unit) then
+                return unit.pos
+            else
+                return unit:GetPrediction(speed,delay)
+            end
+        end
+    end
 
     Priority = function(charName)
         local p1 = {"Alistar", "Amumu", "Blitzcrank", "Braum", "Cho'Gath", "Dr. Mundo", "Garen", "Gnar", "Maokai", "Hecarim", "Jarvan IV", "Leona", "Lulu", "Malphite", "Nasus", "Nautilus", "Nunu", "Olaf", "Rammus", "Renekton", "Sejuani", "Shen", "Shyvana", "Singed", "Sion", "Skarner", "Taric", "TahmKench", "Thresh", "Volibear", "Warwick", "MonkeyKing", "Yorick", "Zac", "Poppy", "Ornn"}
@@ -922,7 +976,7 @@ LocalCallbackAdd(
                 wt = target
             end
             
-            CastSpell(HK_W, Wpos, W.Range)
+            CastSpell(HK_W, Wpos, W.Range, W.Delay * 1000)
         end
         
     end
@@ -942,9 +996,9 @@ LocalCallbackAdd(
 
     CastE = function(target)
         --local spot2
-        if Game.CanUseSpell(2)== 0 and GetDistance(target) < E.Range + 500  * E.Range + 500 then
-            local spot
-            local HC, Epos =  GetHitchance(myHero, target, E.Range, E.Delay, E.Speed, E.Width, false)
+        if (Game.Timer() - OnWaypoint(target).time < 0.15 or Game.Timer() - OnWaypoint(target).time > 1.0) and Game.CanUseSpell(2)== 0 and GetDistance(target) < E.Range + 500  * E.Range + 500 then
+            local spot, spot2
+            local Epos = GetPred(target,R.Range, E.Delay * 1000)
             
             --local Distance = GetDistance(Epos) + 250
               --[[if  GetDistanceSqr(Epos) > E.Range * E.Range then
@@ -953,10 +1007,10 @@ LocalCallbackAdd(
                 --
                 local d = GetDistance(target) / 2
               spot = target.pos + (myHero.pos - target.pos): Normalized() * E.Range
-              spot2 = Vector(target.pos):Extended(Vector(Epos),200) 
+              spot2 = Vector(spot):Extended(Vector(Epos),50) 
             if target.pos:DistanceTo() < E.Range then
                 spot = myHero.pos + (target.pos - myHero.pos):Normalized() * d
-                spot2 = Vector(target.pos):Extended(Vector(Epos), -100)
+                spot2 = Vector(spot):Extended(Vector(Epos), 50)
             end
             local nE = E.Range - 100
             local Dist = GetDistanceSqr(spot2, myHero.pos) - target.boundingRadius*target.boundingRadius
@@ -969,9 +1023,9 @@ LocalCallbackAdd(
                 local nR = E.Range + 1
                 spot2 = myHero.pos + (spot2 - myHero.pos): Normalized() * nR
             end
-            if HC >= 2 and spot and spot2 then 
-                CastSpell(HK_E, spot, E.Range) 
-                CastSpell(HK_E, spot2, E.Range)
+            if spot and spot2 then 
+                CastSpell(HK_E, spot, E.Range, E.Delay * 1000) 
+                CastSpell(HK_E, spot2, E.Range, E.Delay * 1000)
                 
             end
         end
