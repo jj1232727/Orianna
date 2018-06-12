@@ -9,10 +9,10 @@ local SagaHeroCount = Game.HeroCount()
 local SagaTimer = Game.Timer
 local Latency = Game.Latency
 local ping = Latency() * .001
-local Q = { Range1 = 600 , Speed = myHero:GetSpellData(_Q).speed}
-local W = { Range = 1450,	Width = 40.25,	Speed = myHero:GetSpellData(_W).speed,	Delay = .6 + ping, From = myHero, collision = true }
-local E = { Range = 900, Speed = myHero:GetSpellData(_E).speed, Width = 250,	Delay = 1.5 + ping }
-local R = { Range = 20000, Speed = 1500, Width = 50,Delay = .6 + ping, Radius = 150}
+local Q = { Range1 = 600 , Speed = 1125}
+local W = { Range = 1450,	Width = 100,Speed = 650,Delay = .6, From = myHero, collision = true }
+local E = { Range = 900, Speed = math.huge, Width = 250,	Delay = 1.5}
+local R = { Range = 20000, Speed = 1500, Width = 40,Delay = .6, Radius = 150}
 local atan2 = math.atan2
 local MathPI = math.pi
 local _movementHistory = {}
@@ -160,9 +160,6 @@ GetDistanceSqr = function(p1, p2)
 	end
 
 GetEnemyHeroes = function()
-        if _EnemyHeroes then
-            return _EnemyHeroes
-        end
         _EnemyHeroes = {}
         for i = 1, SagaHeroCount do
             local unit = sHero(i)
@@ -834,6 +831,11 @@ LocalCallbackAdd("Draw", function()
 end)
 
 LocalCallbackAdd("Tick", function()
+
+    if Game.Timer() > Saga.Rate.champion:Value() and #_EnemyHeroes == 0 then
+        TotalHeroes = GetEnemyHeroes()
+    end
+
     if isEvading or myHero.dead or Game.IsChatOpen() == true then return end
     Killsteal()
     useRonKey()
@@ -1026,10 +1028,10 @@ AutoE = function()
     local target2 = GetTarget(E.Range)
     if target2 and Saga.QToggle.UseAuto:Value() then
         
-    local hitchance2, aim2 = GetHitchance(jinx, target2, E.Range, E.Delay, E.Speed, E.Width, false)
+    local aim2 = GetPred(target2,math.huge,1.5 + Game.Latency()/1000)
     if aim2 ~= nil and validTarget(target2) then
 		if ItsReadyDumbAss(2) == 0 and hitchance2 >= 4 and myHero.attackData.state ~= 2 then
-			CastItDumbFuk(HK_E, aim2)
+			CastSpell(HK_E, aim2, E.Range, E.Delay)
         end
     end
     end
@@ -1057,9 +1059,9 @@ if target4 and Game.CanUseSpell(3) == 0 and Saga.Combo.UseR:Value() then
     local aim4 = GetPred(target4,math.huge,0.6 + Game.Latency()/1000)
     if aim4 and validTarget(target4) then
 		if ItsReadyDumbAss(3) == 0  and aim4:To2D().onScreen and rDMG > target4.health and d > finalrange and myHero.attackData.state ~= 2 then
-            CastSpell(HK_R, aim4, R.Range, W.Delay*1000)
+            CastSpell(HK_R, aim4, R.Range, R.Delay*1000)
         elseif ItsReadyDumbAss(3) == 0  and rDMG > target4.health and d > finalrange and myHero.attackData.state ~= 2 then
-            CastItBlindFuck(HK_R, aim4, R.Range)
+            CastItBlindFuck(HK_R, aim4, R.Range, R.Delay * 1000)
         end
     end
 end
@@ -1067,11 +1069,10 @@ end
     local target = GetTarget(W.Range)
     if target and Saga.Combo.UseW:Value() then
     local d = GetDistance(myHero.pos, target.pos)
-    local hitchance, aim = GetHitchance(jinx, target , W.Range, W.Delay, W.Speed, W.Width, true)
+    local aim = GetPred(target,math.huge,0.6 + Game.Latency()/1000)
 	if aim ~= nil and validTarget(target) and myHero.attackData.state ~= 2 then
-		if ItsReadyDumbAss(1) == 0 and hitchance >= 2 and  GetDistanceSqr(target) > finalrange * finalrange and aim:To2D().onScreen then
-            
-            CastSpell(HK_W, aim, W.Range)
+		if ItsReadyDumbAss(1) == 0 and  GetDistanceSqr(target) > finalrange * finalrange and aim:To2D().onScreen and (Game.Timer() - OnWaypoint(target).time < 0.15 or Game.Timer() - OnWaypoint(target).time > 1.0) then
+            CastSpell(HK_W, aim, W.Range, W.Delay)
         end
     end
     end
@@ -1079,18 +1080,17 @@ end
     local target2 = GetTarget(E.Range)
     if target2 and Saga.Combo.UseE:Value() then
         
-    local hitchance2, aim2 = GetHitchance(jinx, target2, E.Range, E.Delay, E.Speed, E.Width, false)
+    local aim2 = GetPred(target2,math.huge,1.5 + Game.Latency()/1000)
     if aim2 ~= nil and validTarget(target2) then
-		if ItsReadyDumbAss(2) == 0 and hitchance2 >= 2 and myHero.attackData.state ~= 2 then
-			CastItDumbFuk(HK_E, aim2)
+		if ItsReadyDumbAss(2) == 0  and myHero.attackData.state ~= 2 and (Game.Timer() - OnWaypoint(target).time < 0.15 or Game.Timer() - OnWaypoint(target).time > 1.0)then
+			CastSpell(HK_E, aim2, E.Range, E.Delay * 1000)
         end
     end
     end
     local FishStacks = GetQstacks() or 0
     local target3 = GetTarget(1000)
     if target3 and Saga.Combo.UseQ:Value() then
-        print(Game.CanUseSpell(0))
-        local hitchance3, aim3 = GetHitchance(jinx, target3, finalrange, .25+Game.Latency(), Q.Speed, 150, false)
+        local aim3 = GetPred(target3,math.huge)
         if myHero:GetSpellData(_Q).toggleState == 1 and aim3 then
             
             if FishStacks == 3 and Saga.QToggle.UseQ:Value() and aim3:DistanceTo() < finalrange and ItsReadyDumbAss(0) == 0 and myHero.attackData.state ~= 2 then
@@ -1124,10 +1124,10 @@ Harass = function()
     local target = GetTarget(W.Range)
     if target and Saga.Harass.UseW:Value() then
     local d = GetDistanceSqr(myHero.pos, target.pos)
-    local hitchance, aim = GetHitchance(jinx, target , W.Range, W.Delay, W.Speed, W.Width, true)
-	if d > finalrange * finalrange and aim ~= nil and validTarget(target) and myHero.attackData.state ~= 2 then
-		if manaManager(jinx) >= Saga.mana.manaH.Wmana:Value() and ItsReadyDumbAss(1) == 0 and hitchance >= 2 and aim:To2D().onScreen and minionCollision(target, jinx.pos, aim) == 0 then
-            CastSpell(HK_W, aim, W.Range, W.Delay*1000)
+    local aim = GetPred(target,math.huge,0.6 + Game.Latency()/1000)
+	if d > finalrange * finalrange and aim and validTarget(target) and myHero.attackData.state ~= 2 then
+		if manaManager(jinx) >= Saga.mana.manaH.Wmana:Value() and ItsReadyDumbAss(1) == 0 and aim:To2D().onScreen and minionCollision(target, jinx.pos, aim) == 0  then
+            CastSpell(HK_W, aim, W.Range, W.Delay * 1000)
         end
     end
     end
@@ -1135,7 +1135,7 @@ Harass = function()
     local FishStacks = GetQstacks() or 0
     local target3 = GetTarget(1000)
     if target3 and Saga.Harass.UseQ:Value() then
-        local hitchance3, aim3 = GetHitchance(jinx, target3, finalrange, .25+Game.Latency(), Q.Speed, 150, false)
+        local aim3 = GetPred(target3,math.huge)
         if myHero:GetSpellData(_Q).toggleState == 1 and aim3 then
 
             if FishStacks == 3 and manaManager(jinx) >= Saga.mana.manaH.Qmana:Value() and Saga.QToggle.UseQ:Value() and aim3:DistanceTo() < finalrange and ItsReadyDumbAss(0) == 0 and ItsReadyDumbAss(0) ~= 32 and myHero.attackData.state ~= 2 then
@@ -1168,15 +1168,14 @@ Harass = function()
 end
 
 LaneClear = function() 
-    print(Game.CanUseSpell(0))
     local mp
 
     local target = GetTarget(W.Range)
         if target and Saga.Clear.UseW:Value() then
         local d = GetDistanceSqr(myHero.pos, target.pos)
-        local hitchance, aim = GetHitchance(jinx, target , W.Range, W.Delay, W.Speed, W.Width, true)
+        local aim = GetPred(target,math.huge,0.6 + Game.Latency()/1000)
         if d > finalrange * finalrange  and aim and validTarget(target) and myHero.attackData.state ~= 2 then
-            if manaManager(jinx) >= Saga.mana.manaL.Wmana:Value() and ItsReadyDumbAss(1) == 0 and hitchance >= 2 and aim:To2D().onScreen and minionCollision(target, jinx.pos, aim) == 0 then
+            if (Game.Timer() - OnWaypoint(target).time < 0.15 or Game.Timer() - OnWaypoint(target).time > 1.0) and manaManager(jinx) >= Saga.mana.manaL.Wmana:Value() and ItsReadyDumbAss(1) == 0 and   aim:To2D().onScreen and minionCollision(target, jinx.pos, aim) == 0 then
                 CastSpell(HK_W, aim, W.Range, W.Delay*1000)
             end
         end
@@ -1188,12 +1187,12 @@ LaneClear = function()
             priority = minion.health
             mp = minion
             
-            if Game.CanUseSpell(0) == 0 and ItsReadyDumbAss(0) ~= 32 and manaManager(jinx) >= Saga.mana.manaL.Qmana:Value() and mp.pos:DistanceTo() > 600 and mp.pos:DistanceTo() < finalrange and myHero:GetSpellData(_Q).toggleState == 1 then
+            if Game.CanUseSpell(0) == 0 and ItsReadyDumbAss(0) ~= 32 and mp.pos:DistanceTo() > 600 and mp.pos:DistanceTo() < finalrange and myHero:GetSpellData(_Q).toggleState == 1 then
                 Control.CastSpell(HK_Q)
             end
             
             if Game.CanUseSpell(0) == 0 and ItsReadyDumbAss(0) ~= 32 and myHero.attackData.target == mp.handle then
-                if manaManager(jinx) >= Saga.mana.manaL.Qmana:Value() and GetMinionsinRangeCount(mp, 150) > 2 and myHero:GetSpellData(_Q).toggleState == 1 and mp.pos:DistanceTo() > 600 and mp.pos:DistanceTo() < finalrange  then
+                if GetMinionsinRangeCount(mp, 150) > 2 and myHero:GetSpellData(_Q).toggleState == 1 and mp.pos:DistanceTo() > 600 and mp.pos:DistanceTo() < finalrange  then
                     Control.CastSpell(HK_Q)
                 end
             end
@@ -1202,17 +1201,18 @@ LaneClear = function()
                 Control.CastSpell(HK_Q)
             end
 
-            if Game.CanUseSpell(0) == 0 and ItsReadyDumbAss(0) ~= 32 and manaManager(jinx) >= Saga.mana.manaL.Qmana:Value() and Game.CanUseSpell(0) == 0 and myHero:GetSpellData(_Q).toggleState == 2 then
+            if Game.CanUseSpell(0) == 0 and ItsReadyDumbAss(0) ~= 32 and Game.CanUseSpell(0) == 0 and myHero:GetSpellData(_Q).toggleState == 2 or manaManager(jinx) < Saga.mana.manaH.Wmana:Value() then
                 Control.CastSpell(HK_Q)
             end
+
         end
     end
         priority = 9999
 
     local target3 = GetTarget(1000)
     if target3 and Saga.Clear.UseQT:Value() then
-        local hitchance3, aim3 = GetHitchance(jinx, target3, finalrange, .25+Game.Latency(), Q.Speed, 150, false)
-        if myHero:GetSpellData(_Q).toggleState == 1 and aim3 then
+        local aim3 = GetPred(target3,math.huge)
+        if myHero:GetSpellData(_Q).toggleState == 1 and aim3 and manaManager(jinx) >= Saga.mana.manaL.Qmana:Value() then
             if  Game.CanUseSpell(0) == 0 and ItsReadyDumbAss(0) ~= 32 and manaManager(jinx) >= Saga.mana.manaL.Qmana:Value() and aim3:DistanceTo() > 550 + target3.boundingRadius and myHero.attackData.state ~= 2 then
                 CastItDumbFuk(HK_Q)
             end
@@ -1221,7 +1221,7 @@ LaneClear = function()
             end
         else
             if myHero:GetSpellData(_Q).toggleState == 2 then
-                if manaManager(jinx) >= Saga.mana.manaL.Qmana:Value() and Game.CanUseSpell(0) == 0 and ItsReadyDumbAss(0) ~= 32 and myHero:GetSpellData(_Q).toggleState == 2 then
+                if  Game.CanUseSpell(0) == 0 and ItsReadyDumbAss(0) ~= 32 and myHero:GetSpellData(_Q).toggleState == 2 then
                     Control.CastSpell(HK_Q)
                 end
                 if GetEnemiesinRangeCount(target3, 150) > 1 then
@@ -1255,10 +1255,10 @@ function useRonKey()
         --local hitchance4, aim4 = GetHitchance(jinx.pos, target4, R.Range, R.Delay, R.Speed, R.Width, false)
         local aim4 = GetPred(target4,math.huge,0.6 + Game.Latency()/1000)
         if aim4 and validTarget(target4) then
-            if ItsReadyDumbAss(3) == 0  and aim4:To2D().onScreen and rDMG > target4.health and d > finalrange and myHero.attackData.state ~= 2 then
-                CastSpell(HK_R, aim4, R.Range)
-            elseif ItsReadyDumbAss(3) == 0  and rDMG > target4.health and d > finalrange and myHero.attackData.state ~= 2 then
-                CastItBlindFuck(HK_R, aim4, R.Range)
+            if (Game.Timer() - OnWaypoint(target).time < 0.15 or Game.Timer() - OnWaypoint(target).time > 1.0) and ItsReadyDumbAss(3) == 0  and aim4:To2D().onScreen and rDMG > target4.health and d > finalrange and myHero.attackData.state ~= 2 then
+                CastSpell(HK_R, aim4, R.Range, R.Delay * 1000)
+            elseif (Game.Timer() - OnWaypoint(target).time < 0.15 or Game.Timer() - OnWaypoint(target).time > 1.0) and ItsReadyDumbAss(3) == 0  and rDMG > target4.health and d > finalrange and myHero.attackData.state ~= 2 then
+                CastItBlindFuck(HK_R, aim4, R.Range, R.Delay * 1000)
             end
         end
 	end
@@ -1293,10 +1293,10 @@ Killsteal = function()
     if target and Saga.Killsteal.wKS:Value() then
     local d = GetDistance(myHero.pos, target.pos)
     local wDmg = CalculatePhysicalDamage(target, (myHero:GetSpellData(_W).level * 50 - 40) + myHero.totalDamage * 1.4)
-    local hitchance, aim = GetHitchance(jinx, target , W.Range, W.Delay, W.Speed, W.Width, true)
+    local aim = GetPred(target,math.huge,0.6 + Game.Latency()/1000)
 	if aim ~= nil and validTarget(target) and myHero.attackData.state ~= 2 then
-		if d > finalrange * finalrange and ItsReadyDumbAss(1) == 0 and wDmg > (target.health+target.shieldAD+target.shieldAP) and hitchance >= 2 and minionCollision(target, jinx.pos, aim) == 0 then
-            CastSpell(HK_W, aim, W.Range)
+		if d > finalrange * finalrange and ItsReadyDumbAss(1) == 0 and wDmg > (target.health+target.shieldAD+target.shieldAP) and   minionCollision(target, jinx.pos, aim) == 0 then
+            CastSpell(HK_W, aim, W.Range, W.Delay * 1000)
         end
     end
     end
@@ -1310,11 +1310,11 @@ Flee = function()
     if target and Saga.Combo.UseW:Value() then
     local d = GetDistance(myHero.pos, target.pos)
     local wDmg = CalculatePhysicalDamage(target, (myHero:GetSpellData(_W).level * 50 - 40) + myHero.totalDamage * 1.4)
-    local hitchance, aim = GetHitchance(jinx, target , W.Range, W.Delay, W.Speed, W.Width, true)
+    local aim = GetPred(target,math.huge,0.6 + Game.Latency()/1000)
     if aim ~= nil and validTarget(target) and myHero.attackData.state ~= 2 then
-		if ItsReadyDumbAss(1) == 0 and hitchance >= 2 and aim:To2D().onScreen and minionCollision(target, jinx.pos, aim) == 0 then
+		if ItsReadyDumbAss(1) == 0 and   aim:To2D().onScreen and minionCollision(target, jinx.pos, aim) == 0 then
             
-            CastSpell(HK_W, aim, W.Range)
+            CastSpell(HK_W, aim, W.Range, W.Delay * 1000)
         end
     end
     end
@@ -1336,7 +1336,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Jinx: Lets See Pow Pow Thinks", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.7.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1358,8 +1358,12 @@ function()
     Saga:MenuElement({id = "rRange", name = "Ult Range Slider", type = MENU})
     Saga.rRange:MenuElement({id = 'sliderC', name = 'Range for ult using Spacebar', value = 2000, min = 0, max = 20000,step = 100, tooltip = "Holding SpaceBar"})
     Saga.rRange:MenuElement({id = 'sliderA', name = 'Range for ult using Auto', value = 2000, min = 0, max = 20000,step = 100, tooltip = "Auto Use"})
-	--[[
-
+    
+    Saga:MenuElement({id = "Rate", name = "Recache Rate", type = MENU})
+	Saga.Rate:MenuElement({id = "champion", name = "Value", value = 30, min = 1, max = 120, step = 1})
+    
+    --[[
+    
 	Saga:MenuElement({id = "Lasthit", name = "Lasthit", type = MENU})
     Saga.Lasthit:MenuElement({id = "UseQ", name = "Q", value = true})
     ]]--
