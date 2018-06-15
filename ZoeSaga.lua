@@ -4,6 +4,7 @@ if myHero.charName ~= 'Zoe' then return end
 require "MapPosition"
 
 Latency = Game.Latency
+    local pDraw
     local Zoe = myHero
     local ping = Game.Latency()/1000
     local itsReadyBitch = Game.CanUseSpell
@@ -439,6 +440,21 @@ end
             return #inRadius, inRadius
         end
 
+        GetMinionsinRangeCount = function(target,range)
+            local inRadius =  {}
+            
+            for i = 1, Game.MinionCount() do
+                local unit = Game.Minion(i)
+                if unit.pos ~= nil and minion.team == 300 - myHero.team and minion.isTargetable and minion.visible and not minion.dead then
+                    if  GetDistance(target.pos, unit.pos) <= range then              
+                        inRadius[myCounter] = unit
+                        myCounter = myCounter + 1
+                    end
+                end
+            end
+                myCounter = 1
+            return #inRadius, inRadius
+        end
         
 
 
@@ -559,34 +575,11 @@ end]]--
         
     end)
 
-    Killsteal = function()
-        local QTarget = GetTarget(Q.Range)
-        if QTarget and Saga.KillSteal.qKS:Value() then 
-            if GetDamage(HK_Q, QTarget) > (QTarget.health + QTarget.shieldAD + QTarget.shieldAP) then
-            CastQ(QTarget)
-            end
-        end
-
-        local ETarget = GetTarget(E.Range)
-        if ETarget and Saga.KillSteal.qKS:Value() then 
-            if GetDamage(HK_E, ETarget) > (ETarget.health + ETarget.shieldAD + ETarget.shieldAP) then
-            CastE(ETarget)
-            end
-        end
-        local RTarget = GetTarget(R.Range)
-        if RTarget then 
-            local number, enemies = GetEnemiesinRangeCount(RTarget, R.Radius)
-            if (GetDamage(HK_R, RTarget) > (RTarget.health + RTarget.shieldAD + RTarget.shieldAP) and Saga.KillSteal.rKS[RTarget.charName]:Value()) or (number >= Saga.Misc.RCount:Value() and Saga.KillSteal.rKS[RTarget.charName]:Value()) then
-            CastR(RTarget) end 
-        end
-
-
-    end
 
 ECastWall = function()
     local target = GetTarget(2000)
     if target then
-        if  validTarget(target) and target.pos:DistanceTo() < (E.Range + 300) and Game.CanUseSpell(2) == 0 and Saga.Combo.UseE:Value() then
+        if  validTarget(target) and target.pos:DistanceTo() < (E.Range + 600) and Game.CanUseSpell(2) == 0 and Saga.Combo.UseE:Value() then
 			local CastPosition = GetPred(target,math.huge,E.Delay + Game.Latency()/1000)
             local midwall = myHero.pos + (CastPosition - myHero.pos):Normalized() * target.pos:DistanceTo() / 2
             local segment = LineSegment(Point(myHero.pos), Point(CastPosition))
@@ -595,7 +588,7 @@ ECastWall = function()
                     drawE = CastPosition
                     status = target
                     stuncast = os.clock()
-                    CastSpell(HK_E , CastPosition, E.Range, E.Delay * 1000)
+                    CastSpell(HK_E , CastPosition, E.Range)
                 end
         end 
     end
@@ -645,39 +638,43 @@ function JBCombo()
     local point5
     if target then
         if os.clock() - stuncast > 1 and not QRecast()  and GotBuff(target, "zoeesleepcountdownslow") == 1 and target.pos:DistanceTo() < 1000 and Saga.Combo.UseQ:Value() then
-            point = Vector(target.pos):Extended(Vector(myHero.pos), 1000)
+            point = Vector(target.pos):Extended(myHero.pos, 1000)
             Collision = minionCollision2(myHero.pos, point, Q)
             if Collision == 0 and Game.CanUseSpell(0) == 0 then
                 noBuff = os.clock()
                 CastSpell(HK_Q, point) end end
         if os.clock() - stuncast > 1 and not QRecast() and GotBuff(target, "zoeesleepcountdownslow") == 1 and target.pos:DistanceTo() < rQ2ange then
-            local point2 = Vector(target):Perpendicular()
-                local startpos = Vector(myHero.pos)
+            local point2 = target.pos:Perpendicular()
+                local startpos = myHero.pos
                 local endpos = Vector(target.pos)
                 local dir = (endpos - startpos):Normalized()
                 pDir = dir:Perpendicular()
                 Collision = minionCollision2(myHero.pos, pDir, Q)
                 if Collision == 0 and Game.CanUseSpell(0) == 0 then
                     noBuff = os.clock()
-                    CastSpell(HK_Q, pDir) end end
+                    CastSpell(HK_Q, pDir)  end end
         if os.clock() - stuncast > 1 and not QRecast() and GotBuff(target, "zoeesleepcountdownslow") == 1 and target.pos:DistanceTo() < rQ2ange then
-                    point3 = Vector(target.pos):Perpendicular2()
+                    point3 = target.pos:Perpendicular2()
                     Collision = minionCollision2(myHero.pos, point3, Q)
                     if Collision == 0 and Game.CanUseSpell(0) == 0 then
                         noBuff = os.clock()
-                        CastSpell(HK_Q,point3) end end
+                        CastSpell(HK_Q,point3)  end end
         if os.clock() - stuncast > 1 and not QRecast() and GotBuff(target, "zoeesleepcountdownslow") == 1 and target.pos:DistanceTo() < rQ2ange then
-                    point4 = Vector(target.pos):Perpendicular2():Perpendicular2()
+                    point4 = target.pos:Perpendicular2():Perpendicular2()
                     Collision = minionCollision2(myHero.pos, point4, Q)
                     if Collision == 0 and Game.CanUseSpell(0) == 0 then
                         noBuff = os.clock()
-                        CastSpell(HK_Q,point4) end end
+                        CastSpell(HK_Q,point4) 
+                        
+                    end end
         if os.clock() - stuncast > 1 and not QRecast()  and target.pos:DistanceTo() < 1000 and Game.CanUseSpell(2) ~= 0 and Saga.Combo.UseQ:Value() then
-            point5 = Vector(target.pos):Extended(Vector(myHero.pos), 1000)
+            point5 = Vector(target.pos):Extended(myHero.pos, 1000)
             Collision = minionCollision2(myHero.pos, point5, Q)
             if Collision == 0 and Game.CanUseSpell(0) == 0 then
                 noBuff = os.clock()
-                CastSpell(HK_Q, point5) end
+                CastSpell(HK_Q, point5) 
+                
+            end
             end end
 
             
