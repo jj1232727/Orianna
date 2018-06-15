@@ -272,8 +272,8 @@ Latency = Game.Latency
     
     GetEnemyHeroes = function()
         _EnemyHeroes = {}
-        for i = 1, BallHeroes() do
-            local unit = HeroBalls(i)
+        for i = 1, Game.HeroCount() do
+            local unit = Game.Hero(i)
             if unit.team == TEAM_ENEMY  then
                 _EnemyHeroes[myCounter] = unit
                 myCounter = myCounter + 1
@@ -1403,7 +1403,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Viktor", name = "Saga's Viktor: The Fellow Engineer"})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.4.2"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.4.3"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
