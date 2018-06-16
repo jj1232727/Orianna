@@ -1029,8 +1029,8 @@ AutoE = function()
     if target2 and Saga.QToggle.UseAuto:Value() then
         
     local aim2 = GetPred(target2,math.huge,1.5 + Game.Latency()/1000)
-    if aim2 ~= nil and validTarget(target2) then
-		if ItsReadyDumbAss(2) == 0 and hitchance2 >= 4 and myHero.attackData.state ~= 2 then
+    if aim2 ~= nil and validTarget(target2) and IsImmobileTarget(target2) then
+		if ItsReadyDumbAss(2) == 0 and myHero.attackData.state ~= 2 then
 			CastSpell(HK_E, aim2, E.Range, E.Delay)
         end
     end
@@ -1088,19 +1088,19 @@ end
     end
     end
     local FishStacks = GetQstacks() or 0
-    local target3 = GetTarget(1000)
+    local target3 = GetTarget(2000)
     if target3 and Saga.Combo.UseQ:Value() then
         local aim3 = GetPred(target3,math.huge)
         if myHero:GetSpellData(_Q).toggleState == 1 and aim3 then
             
-            if FishStacks == 3 and Saga.QToggle.UseQ:Value() and aim3:DistanceTo() < finalrange and ItsReadyDumbAss(0) == 0 and myHero.attackData.state ~= 2 then
+            if FishStacks == 3 and Saga.QToggle.UseQ:Value() and aim3:DistanceTo() < finalrange and  ItsReadyDumbAss(0) ~= 32 and ItsReadyDumbAss(0) == 0 and myHero.attackData.state ~= 2 then
                 CastItDumbFuk(HK_Q)
             end
-            if  aim3:DistanceTo() > 550 + target3.boundingRadius and myHero.attackData.state ~= 2 then
+            if  aim3:DistanceTo() > 550 + target3.boundingRadius and ItsReadyDumbAss(0) ~= 32 and myHero.attackData.state ~= 2 then
                 CastItDumbFuk(HK_Q)
             end
             
-            if GetEnemiesinRangeCount(target3, 150) > 1 and FishStacks > 2 and ItsReadyDumbAss(0) == 0 and myHero.attackData.state ~= 2 then
+            if GetEnemiesinRangeCount(target3, 150) > 1 and ItsReadyDumbAss(0) ~= 32 and FishStacks > 2 and ItsReadyDumbAss(0) == 0 and myHero.attackData.state ~= 2 then
                 CastItDumbFuk(HK_Q)
             end
         else
@@ -1108,10 +1108,13 @@ end
             if GetEnemiesinRangeCount(target3, 150) > 1 then
                 return
             end
-            if FishStacks < 3 and aim3:DistanceTo() < 575 + target3.boundingRadius and ItsReadyDumbAss(0) == 0 and myHero.attackData.state ~= 2 then
+            if FishStacks < 3 and aim3:DistanceTo() < 575 + target3.boundingRadius and ItsReadyDumbAss(0) ~= 32 and ItsReadyDumbAss(0) == 0 and myHero.attackData.state ~= 2 then
                 CastItDumbFuk(HK_Q)
             end
-            if aim3:DistanceTo() < 575 + target3.boundingRadius and ItsReadyDumbAss(0) == 0 and myHero.attackData.state ~= 2 then
+            if aim3:DistanceTo() < 575 + target3.boundingRadius and ItsReadyDumbAss(0) ~= 32 and ItsReadyDumbAss(0) == 0 and myHero.attackData.state ~= 2 then
+                CastItDumbFuk(HK_Q)
+            end
+            if GetEnemiesinRangeCount(myHero, finalrange) < 1 and ItsReadyDumbAss(0) ~= 32  and ItsReadyDumbAss(0) == 0 and myHero.attackData.state ~= 2 then
                 CastItDumbFuk(HK_Q)
             end
         end
@@ -1255,9 +1258,9 @@ function useRonKey()
         --local hitchance4, aim4 = GetHitchance(jinx.pos, target4, R.Range, R.Delay, R.Speed, R.Width, false)
         local aim4 = GetPred(target4,math.huge,0.6 + Game.Latency()/1000)
         if aim4 and validTarget(target4) then
-            if (Game.Timer() - OnWaypoint(target).time < 0.15 or Game.Timer() - OnWaypoint(target).time > 1.0) and ItsReadyDumbAss(3) == 0  and aim4:To2D().onScreen and rDMG > target4.health and d > finalrange and myHero.attackData.state ~= 2 then
+            if (Game.Timer() - OnWaypoint(target4).time < 0.15 or Game.Timer() - OnWaypoint(target4).time > 1.0) and ItsReadyDumbAss(3) == 0  and aim4:To2D().onScreen and rDMG > target4.health and d > finalrange and myHero.attackData.state ~= 2 then
                 CastSpell(HK_R, aim4, R.Range, R.Delay * 1000)
-            elseif (Game.Timer() - OnWaypoint(target).time < 0.15 or Game.Timer() - OnWaypoint(target).time > 1.0) and ItsReadyDumbAss(3) == 0  and rDMG > target4.health and d > finalrange and myHero.attackData.state ~= 2 then
+            elseif (Game.Timer() - OnWaypoint(target4).time < 0.15 or Game.Timer() - OnWaypoint(target4).time > 1.0) and ItsReadyDumbAss(3) == 0  and rDMG > target4.health and d > finalrange and myHero.attackData.state ~= 2 then
                 CastItBlindFuck(HK_R, aim4, R.Range, R.Delay * 1000)
             end
         end
@@ -1336,7 +1339,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Jinx: Lets See Pow Pow Thinks", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.7.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.8.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
