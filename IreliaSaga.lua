@@ -31,7 +31,7 @@ local Killsteal
 local ignitecast
 local igniteslot
 local ECast = false
-local items = { [ITEM_1] = 49, [ITEM_2] = 50, [ITEM_3] = 51, [ITEM_4] = 52, [ITEM_5] = 53, [ITEM_6] = 54 }
+local HKITEM = { [ITEM_1] = 49, [ITEM_2] = 50, [ITEM_3] = 51, [ITEM_4] = 52, [ITEM_5] = 53, [ITEM_6] = 54 }
 local visionTick = 0
 local wClock = 0
 local settime = 0
@@ -499,6 +499,49 @@ GetEnemiesinRangeCountQ = function(target,range)
 
 end
 
+checkItems = function()
+	local itemss = {}
+	for slot = ITEM_1,ITEM_6 do
+		local id = myHero:GetItemData(slot).itemID 
+		if id > 0 then
+			itemss[id] = slot
+		end
+	end
+	return itemss
+end
+
+SIGroup = function(target)
+	local items = checkItems()
+	local Bilge = items[3144] or items[3153]
+	if target then
+		if Bilge  and myHero:GetSpellData(Bilge).currentCd == 0  and myHero.pos:DistanceTo(target.pos) < 550 then
+			Control.CastSpell(HKITEM[Bilge], target.pos)
+		end
+		
+		
+		local Tiamat = items[3077] or items[3748] or items[3074]
+		if Tiamat and myHero:GetSpellData(Tiamat).currentCd == 0  and myHero.pos:DistanceTo(target.pos) < 400 and myHero.attackData.state == 2 then
+			Control.CastSpell(HKITEM[Tiamat], target.pos)
+		end
+
+		local YG = items[3142]
+		if YG and myHero:GetSpellData(YG).currentCd == 0  and myHero.pos:DistanceTo(target.pos) < 1575 then
+			Control.CastSpell(HKITEM[YG])
+		end
+		
+		
+		if ignitecast and igniteslot then
+			if target and Game.CanUseSpell(igniteslot) == 0 and GetDistanceSqr(myHero, target) < 450 * 450 and 25 >= (100 * target.health / target.maxHealth) then
+				Control.CastSpell(ignitecast, target)
+			end
+		end
+
+	end
+
+end
+
+
+
 LocalCallbackAdd("Load", function()
 TotalHeroes = GetEnemyHeroes()
 GetIgnite()
@@ -622,6 +665,7 @@ LocalCallbackAdd("Tick", function()
     
    
     if GetOrbMode() == 'Combo' then
+        
         Combo()
     end
 
@@ -1170,8 +1214,9 @@ Combo =  function()
     else
         targetExt = GetTarget(1250)
     end
-
+    
     if targetExt and Saga.Combo.UseQExt:Value() then
+    SIGroup(targetExt)
     local targetExtend = GetEnemiesinRangeCountQ(targetExt, 625)
     if targetExtend then
         if targetExt.pos:DistanceTo() >= 625 and GetDistance(targetExt.pos, targetExtend.pos) <= 625*625 then
@@ -1344,7 +1389,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.2.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
