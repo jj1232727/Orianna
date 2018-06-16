@@ -455,6 +455,12 @@ end
         TotalHeroes = GetEnemyHeroes()
         IDListNumber = GetHeroesWithBitches()
         Saga_Menu()
+        if Game.Timer() > Saga.Rate.champion:Value() then
+        for i = 1, TotalHeroes do
+            local hero = _EnemyHeroes[i]
+        Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
+        end
+    end
         
 
 		local orbwalkername = ""
@@ -479,6 +485,12 @@ LocalCallbackAdd(
     function()
             if Game.Timer() > Saga.Rate.champion:Value() and #_EnemyHeroes == 0 then
                 TotalHeroes = GetEnemyHeroes()
+                IDListNumber = GetHeroesWithBitches()
+                for i = 1, TotalHeroes do
+                    local hero = _EnemyHeroes[i]
+                Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
+                end
+
             end
             if #_EnemyHeroes == 0 then return end
             OnVisionF()
@@ -1274,7 +1286,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Syndra", name = "Saga's Syndra: Big Purple Balls", icon = SagaIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 3.0.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 3.1.0"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1299,10 +1311,7 @@ function()
 
     Saga:MenuElement({id = "KillSteal", name = "KillSteal", type = MENU})
     Saga.KillSteal:MenuElement({id = "rKS", name = "R KS on: ", value = false, type = MENU})
-    for i = 1, TotalHeroes do
-        local hero = _EnemyHeroes[i]
-    Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
-    end
+    
 
 	Saga:MenuElement({id = "Lasthit", name = "Lasthit", type = MENU})
 	Saga.Lasthit:MenuElement({id = "UseQ", name = "Q", value = true})

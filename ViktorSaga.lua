@@ -761,7 +761,12 @@ end
         
         TotalHeroes = GetEnemyHeroes()
         Saga_Menu()
-        
+        if Game.Timer() > Saga.Rate.champion:Value() then
+            for i = 1, TotalHeroes do
+                local hero = _EnemyHeroes[i]
+            Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
+            end
+        end
 
 		local orbwalkername = ""
 		local orb
@@ -785,8 +790,14 @@ LocalCallbackAdd(
     function()
             if Game.Timer() > Saga.Rate.champion:Value() and #_EnemyHeroes == 0 then
                 TotalHeroes = GetEnemyHeroes()
+                for i = 1, TotalHeroes do
+                    local hero = _EnemyHeroes[i]
+                Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
+                end
+                
             end
             if #_EnemyHeroes == 0 then return end
+            
             OnVisionF()
             UpdateMovementHistory()
             if myHero.dead or Game.IsChatOpen() == true  or isEvading then return end
@@ -855,8 +866,11 @@ LocalCallbackAdd(
         local RTarget = GetTarget(R.Range)
         if RTarget then 
             local number, enemies = GetEnemiesinRangeCount(RTarget, R.Radius)
-            if (GetDamage(HK_R, RTarget) > (RTarget.health + RTarget.shieldAD + RTarget.shieldAP) and Saga.KillSteal.rKS[RTarget.charName]:Value()) or (number >= Saga.Misc.RCount:Value() and Saga.KillSteal.rKS[RTarget.charName]:Value()) then
-            CastR(RTarget) end 
+            if (GetDamage(HK_R, RTarget) > (RTarget.health + RTarget.shieldAD + RTarget.shieldAP) and Saga.KillSteal.rKS[RTarget.charName]:Value())  then
+            end 
+            if (number >= Saga.Misc.RCount:Value() and Saga.KillSteal.rKS[RTarget.charName]:Value()) then
+                CastR(RTarget) 
+            end
         end
 
 
@@ -1403,7 +1417,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Viktor", name = "Saga's Viktor: The Fellow Engineer"})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.4.3"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5.0"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1427,10 +1441,7 @@ function()
     Saga.KillSteal:MenuElement({id = "qKS", name = "Q", value = true})
     Saga.KillSteal:MenuElement({id = "eKS", name = "E", value = true})
     Saga.KillSteal:MenuElement({id = "rKS", name = "R KS on: ", value = false, type = MENU})
-    for i = 1, TotalHeroes do
-        local hero = _EnemyHeroes[i]
-    Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
-    end
+    
 
     Saga:MenuElement({id = "Lasthit", name = "Lasthit", type = MENU})
 	Saga.Lasthit:MenuElement({id = "UseQ", name = "Q", value = true})
