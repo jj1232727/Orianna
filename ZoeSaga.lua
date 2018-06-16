@@ -549,14 +549,14 @@ LocalCallbackAdd(
         LocalCallbackAdd(
     'Draw', function() 
         
-        if status and drawE then 
+        --[[if status and drawE then 
             local segment = LineSegment(Point(myHero.pos), Point(status.pos))
             if  MapPosition:intersectsWall(segment) and not status.dead and status.valid and status.visible and Game.CanUseSpell(2) == 0 and drawE:DistanceTo() < E.Range + 600 then
                 Draw.Line(myHero.pos:To2D().x, myHero.pos:To2D().y, status.pos:To2D().x, status.pos:To2D().y, 10, Draw.Color(255, 155, 105, 240))
                 Draw.Circle(drawE, E.Width, 3, Saga.Drawings.Q.Color:Value())
                 
             end
-        end
+        end]]--
         if Saga.Drawings.Q.Enabled:Value() then Draw.Circle(Zoe.pos, Q.Range, 0, Saga.Drawings.Q.Color:Value()) end
         --if Saga.Drawings.W.Enabled:Value() then Draw.Circle(Zoe.pos, W.Range, 0, Saga.Drawings.W.Color:Value()) end
         if Saga.Drawings.E.Enabled:Value() then Draw.Circle(Zoe.pos, E.Range, 0, Saga.Drawings.E.Color:Value()) end
@@ -1431,7 +1431,7 @@ end
 Saga_Menu =
 function()
 	Saga = MenuElement({type = MENU, id = "Zoe", name = "Saga's Zoe: The Ultimate Jailbait", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version BETA 1.6.2"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version BETA 1.7.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
