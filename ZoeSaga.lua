@@ -583,12 +583,12 @@ ECastWall = function()
 			local CastPosition = GetPred(target,math.huge,E.Delay + Game.Latency()/1000)
             local midwall = myHero.pos + (CastPosition - myHero.pos):Normalized() * target.pos:DistanceTo() / 2
             local segment = LineSegment(Point(myHero.pos), Point(CastPosition))
-            
+
                 if MapPosition:intersectsWall(segment) and minionCollision2(myHero.pos,CastPosition,E) == 0 then
                     drawE = CastPosition
                     status = target
                     stuncast = os.clock()
-                    CastSpell(HK_E , CastPosition, E.Range)
+                    CastSpell(HK_E , CastPosition, E.Range + 600, E.Delay * 1000)
                 end
         end 
     end
@@ -626,6 +626,144 @@ ECastH = function()
     end
 end
 
+function ComboJB()
+    
+    local target = GetTarget(1500)
+    local Collision
+    local point
+    local pDir
+    local point3
+    local point4
+    local point5
+    if target then
+        if target.pos:DistanceTo() < E.Range and Saga.Combo.UseE:Value() then
+            local CastPosition = GetPred(target,math.huge,Q.Delay + Game.Latency()/1000)
+            if Game.CanUseSpell(2) == 0 and minionCollision2(myHero.pos,CastPosition,E) == 0 then
+            stuncast = os.clock()  
+            CastSpell(HK_E, CastPosition, Q.Range, Q.Delay) end 
+        end
+
+        if GotBuff(target, "zoeesleepcountdownslow") == 1 and os.clock() - stuncast > 1 and Game.CanUseSpell(0) == 0 and Game.CanUseSpell(3) == 0 and target and Saga.Combo.UseR:Value() then
+            local pointr = myHero.pos + (target.pos - myHero.pos):Normalized() * - 600
+            
+            if GetDistance(target.pos) < 600 then
+                CastSpell(HK_R, pointr)
+            end 
+        end
+
+        --[[if os.clock() - stuncast > 1 and not QRecast()  and GotBuff(target, "zoeesleepcountdownslow") == 1 and Saga.Combo.UseQ:Value() then
+            point = Vector(target.pos):Extended(myHero.pos, 1000)
+            Collision = minionCollision2(myHero.pos, point, Q)
+            if Collision == 0 and Game.CanUseSpell(0) == 0 then
+                noBuff = os.clock()
+                CastSpell(HK_Q, point) end end]]--
+        if os.clock() - stuncast > 1 and not QRecast() and GotBuff(target, "zoeesleepcountdownslow") == 1 then
+            local point2 = target.pos:Perpendicular()
+                local startpos = myHero.pos
+                local endpos = Vector(target.pos)
+                local dir = (endpos - startpos):Normalized()
+                pDir = dir:Perpendicular()
+                Collision = minionCollision2(myHero.pos, pDir, Q)
+                if Collision == 0 and Game.CanUseSpell(0) == 0 then
+                    noBuff = os.clock()
+                    CastSpell(HK_Q, pDir)  end end
+        if os.clock() - stuncast > 1 and not QRecast() and GotBuff(target, "zoeesleepcountdownslow") == 1 then
+                    point3 = target.pos:Perpendicular2()
+                    Collision = minionCollision2(myHero.pos, point3, Q)
+                    if Collision == 0 and Game.CanUseSpell(0) == 0 then
+                        noBuff = os.clock()
+                        CastSpell(HK_Q,point3)  end end
+        if os.clock() - stuncast > 1 and not QRecast() and GotBuff(target, "zoeesleepcountdownslow") == 1 then
+                    point4 = target.pos:Perpendicular2():Perpendicular2()
+                    Collision = minionCollision2(myHero.pos, point4, Q)
+                    if Collision == 0 and Game.CanUseSpell(0) == 0 then
+                        noBuff = os.clock()
+                        CastSpell(HK_Q,point4) 
+                        
+                    end end
+        if os.clock() - stuncast > 1 and not QRecast()  and Game.CanUseSpell(2) ~= 0 and Game.CanUseSpell(0) == 56 and Saga.Combo.UseQ:Value() then
+            point5 = Vector(target.pos):Extended(myHero.pos, 1000)
+            Collision = minionCollision2(myHero.pos, point5, Q)
+            if Collision == 0 and Game.CanUseSpell(0) == 0 then
+                noBuff = os.clock()
+                CastSpell(HK_Q, point5) 
+                
+            end
+            end end
+
+            
+            if Game.CanUseSpell(1) == 0 and Saga.Combo.UseW:Value() and target then 
+                
+                if myHero:GetSpellData(_W).name:lower() == "summonerdot" and target.pos:DistanceTo() < 600 and Saga.Misc.items.ignite:Value()
+                    or myHero:GetSpellData(_W).name:lower() == "summonerexhaust"  and target.pos:DistanceTo() < 650 and Saga.Misc.items.exhaust:Value() 
+                    or myHero:GetSpellData(_W).name:lower() == "hextechgunblade"  and target.pos:DistanceTo() < 700 and Saga.Misc.items.hex:Value()
+                    or myHero:GetSpellData(_W).name:lower() == "s5_summonersmiteplayerganker"  and target.pos:DistanceTo() < 500 and Saga.Misc.items.smite:Value() -- itemswordoffeastandfamine
+                    or myHero:GetSpellData(_W).name:lower() == "itemswordoffeastandfamine"  and target.pos:DistanceTo() < 550 and Saga.Misc.items.botrk:Value()
+                then
+                    Control.CastSpell(HK_W, target)
+                end
+                if table.contains(defensiveList,myHero:GetSpellData(_W).name:lower()) then 
+                    if myHero:GetSpellData(_W).name:lower() == "summonerheal" and (myHero.maxHealth * .25) > myHero.health and Saga.Misc.items.heal:Value() 
+                    or myHero:GetSpellData(_W).name:lower() == "summonerbarrier" and (myHero.maxHealth * .25) > myHero.health and Saga.Misc.items.barrier:Value()
+                    or myHero:GetSpellData(_W).name:lower() == "zhonyasHourglass" and (myHero.maxHealth * .25) > myHero.health and Saga.Misc.items.zhonya:Value()
+                    or myHero:GetSpellData(_W).name:lower() == "summonerboost" and (myHero.maxHealth * .25) > myHero.health and Saga.Misc.items.cleanse:Value()
+                    then 
+                        Control.CastSpell(HK_W)
+                    end
+
+                end
+
+                if myHero:GetSpellData(_W).name:lower() == "itemsofboltspellbase" and target.pos:DistanceTo() < 600 and Saga.Misc.items.proto:Value() then 
+                    Control.CastSpell(HK_W, target.pos)
+                end
+
+                if myHero:GetSpellData(_W).name:lower() == "itemwillboltspellbase" and target.pos:DistanceTo() < 600 and Saga.Misc.items.glp:Value() then 
+                    Control.CastSpell(HK_W, target.pos)
+                end
+
+                if myHero:GetSpellData(_W).name:lower() == "itemredemption" and target.pos:DistanceTo() < 600 and Saga.Misc.items.red:Value() then
+                    Control.CastSpell(HK_W, target.pos)
+                end
+                if myHero:GetSpellData(_W).name:lower() == "ironstylus" and target.pos:DistanceTo() < 600 and Saga.Misc.items.red:Value() then
+                    Control.CastSpell(HK_W, target.pos)
+                end
+
+                if myHero:GetSpellData(_W).name:lower() == "itemstylus" and
+                target.pos:DistanceTo() < 600 and Saga.Misc.items.solari:Value()
+                or myHero:GetSpellData(_W).name:lower() == "youmusblade" and
+                target.pos:DistanceTo() < 600 and Saga.Misc.items.yo:Value()
+                or myHero:GetSpellData(_W).name:lower() == "itemrighteousglory"
+                and target.pos:DistanceTo() < 600 and Saga.Misc.items.rg:Value() then
+                    Control.CastSpell(HK_W)
+                end
+
+
+
+            end
+    local CastPosition
+    if target then 
+    CastPosition = GetPred(target,math.huge,Q.Delay + Game.Latency()/1000)
+    end
+    if GotBuff(target, "zoeesleepstun") == 1 and QRecast() and target.pos:DistanceTo() < rQ2ange and Saga.Combo.UseQ2:Value() then
+        --local CastPosition = GetPred(target,math.huge,Q.Delay + Game.Latency()/1000)
+            CastSpell(HK_Q, target.pos)
+    end
+    if os.clock() - noBuff > 0.6 and GotBuff(target, "zoeesleepcountdownslow") == 1 and QRecast() and target.pos:DistanceTo() < rQ2ange and Saga.Combo.UseQ2:Value() then
+        --CastPosition = GetPred(target,math.huge,Q.Delay + Game.Latency()/1000)
+            CastSpell(HK_Q, CastPosition, Q.Range, Q.Delay)
+               
+    end
+    if QRecast() and IsImmobile(target, Q) and target.pos:DistanceTo() < 800 and Saga.Combo.UseQ2:Value() then
+        --local CastPosition = GetPred(target,math.huge,Q.Delay + Game.Latency()/1000)
+            CastSpell(HK_Q, target.pos)
+    end
+    if os.clock() - noBuff > 0.5 and QRecast() and target.pos:DistanceTo() < rQ2ange and Saga.Combo.UseQ2:Value() and GotBuff(target, "zoeesleepcountdownslow") == 0 then
+        --local CastPosition = GetPred(target,math.huge,Q.Delay + Game.Latency()/1000)  
+        CastSpell(HK_Q, CastPosition, Q.Range, Q.Delay)
+    end 
+     
+    
+end
 
 function JBCombo()
     
@@ -915,8 +1053,10 @@ function QRecast()
 end
 Combo = function()
     ECastWall()
+    
+    ComboJB()
+
     JBCombo()
-    --ECast()
 
 
 end
@@ -1431,7 +1571,7 @@ end
 Saga_Menu =
 function()
 	Saga = MenuElement({type = MENU, id = "Zoe", name = "Saga's Zoe: The Ultimate Jailbait", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version BETA 1.7.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version BETA 1.8.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
