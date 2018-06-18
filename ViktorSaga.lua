@@ -1039,7 +1039,7 @@ LocalCallbackAdd(
             end
             if spot and spot2 then 
                 CastSpell(HK_E, spot, E.Range, E.Delay * 1000) 
-                CastSpell(HK_E, spot2, E.Range, E.Delay * 1000)
+                Control.CastSpell(HK_E, spot2)
                 
             end
         end
@@ -1417,7 +1417,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Viktor", name = "Saga's Viktor: The Fellow Engineer"})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5.2"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
