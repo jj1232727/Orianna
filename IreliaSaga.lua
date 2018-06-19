@@ -13,7 +13,6 @@ local atan2 = math.atan2
 local MathPI = math.pi
 local _movementHistory = {}
 local clock = os.clock
-local stunCounter = 0
 local sHero = Game.Hero
 local TEAM_ALLY = Irelia.team
 local TEAM_ENEMY = 300 - TEAM_ALLY
@@ -29,6 +28,7 @@ local TotalHeroes
 local LocalCallbackAdd = Callback.Add
 local Killsteal
 local ignitecast
+local eStun = 0
 local igniteslot
 local ECast = false
 local HKITEM = { [ITEM_1] = 49, [ITEM_2] = 50, [ITEM_3] = 51, [ITEM_4] = 52, [ITEM_5] = 53, [ITEM_6] = 54 }
@@ -1125,6 +1125,7 @@ function CastETarget(unit)
             if myHero:GetSpellData(_E).name == "IreliaE2" then
             
             Control.CastSpell(HK_E, Espot2)
+            eStun = os.clock()
             end
 
     end
@@ -1139,21 +1140,7 @@ function CastETarget(unit)
     end
 end
 
-ESearch = function()
-    local stonedagger = nil
-    if stunCounter + 50 > GetTickCount() then return end
-	for i = 1, shitaround() do
-        local object = shit(i)
-		if object and object.valid and not object.dead and object.visible then
-			if object.charName == "Irelia_Base_E_Team_Indicator" and object.networkID ~= stonecoldstunner.networkID then
-                stonedagger = object
-			end
-		end
-    end
-    myCounter = 1
-    stonecoldstunner = stonedagger
-    stunCounter = GetTickCount()
-end
+
 
 
 
@@ -1249,7 +1236,7 @@ Combo =  function()
     if target and Saga.Combo.UseQ:Value() then
         if Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 1 then
             CastQ(target)
-        elseif Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 0 and myHero:GetSpellData(_E).name == "IreliaE" then
+        elseif os.clock() - eStun > 1.5 and Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 0 and myHero:GetSpellData(_E).name == "IreliaE" then
             CastQ(target)
         end
     end
@@ -1394,7 +1381,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.5.3"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.6.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
