@@ -886,12 +886,14 @@ CalcMagicalDamage = function(source, target, amount)
     daggersearch = function()
         local daggers = {}
         if dagger_count + 50 > GetTickCount() then return end
-        for i = 1, shitaround() do
-            local object = shit(i)
+        for i = 1, Game.ParticleCount() do
+            local object = Game.Particle(i)
             if object then
-                if object.name:lower():find("katarina_base_dagger_ground_indicator") and not table.contains(daggers, object.pos) then
+                if object.name == "Katarina_Base_Q_Dagger_Land_Water" or object.name == "Katarina_Base_Q_Dagger_Land_Dirt"  then
+                    if not table.contains(daggers, object.pos) then
                     daggers[myCounter] = object.pos
                     myCounter = myCounter + 1
+                    end
                 end
             end
         end
@@ -1185,13 +1187,13 @@ function LastHit()
     for i = 0, SagaMCount() do
         local minion = SagasBitch(i)
 		if minion and minion.isTargetable and minion.team == TEAM_ENEMY and minion.dead == false then
-			if Saga.Lasthit.UseQ then
+			if Saga.Lasthit.UseQ:Value() then
 				if minion.health <= GetDamage(HK_Q, minion) then
 					CastQ(minion)
 				end
 			end
 
-			if Saga.Lasthit.UseE then
+			if Saga.Lasthit.UseE:Value() then
 				if minion.health <= GetDamage(HK_E, minion) then
 					CastETarget(minion)
 				end
@@ -1287,7 +1289,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Katarina", name = "Saga's Katarina: Shump on These Nuts", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 3.0.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 3.1.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
