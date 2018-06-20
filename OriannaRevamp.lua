@@ -176,7 +176,7 @@ require "MapPosition"
 		
 		TotalHeroes = GetEnemyHeroes()
 		TotalAHeroes = GetAllyHeroes()
-		print(TotalHeroes)
+
 		if GotBuff(myHero, "ASSETS/Perks/Styles/Sorcery/ArcaneComet/ArcaneComet.lua") then
 			AC = true 
 		end
@@ -209,6 +209,22 @@ require "MapPosition"
 				if #_EnemyHeroes == 0 then return end
 				OnVisionF()
 				
+
+
+				if  Saga.Killsteal.rKS:Value() then
+					AutoR()
+				end
+
+				if  Saga.Misc.UseW:Value() then
+					AutoW()
+				end
+
+				if  Saga.Misc.UseQ:Value() then
+					AutoQ()
+				end
+
+				
+
 				if myHero.dead or Game.IsChatOpen() == true then return end
 				AutoEAlly()
 				
@@ -576,6 +592,22 @@ GetEnemiesinRangeCount = function(target,range)
     return #inRadius, inRadius
 end
 
+GetMinionsinRangeCount = function(target,range)
+	local inRadius =  {}
+	
+    for i = 1, Game.MinionCount() do
+		local minion = Game.Minion(i)
+		if minion and minion.visible and not minion.dead and minion.isEnemy and minion.isTargetable and minion.valid then
+			if  GetDistance(target, minion.pos) <= range then	
+				inRadius[myCounter] = minion
+                myCounter = myCounter + 1
+            end
+        end
+	end
+		myCounter = 1
+    return #inRadius, inRadius
+end
+
 GetAlliesinRangeCount = function(range, target)
 	local inRadius =  {}
     for i = 1, TotalHeroes do
@@ -644,6 +676,57 @@ if ally then
 end
 end
 
+AutoQ = function()
+	local target = GetTarget(Q.Range)
+	if target then 
+	if Game.CanUseSpell(0) == 0 and Saga.Combo.UseW:Value() then
+		pos = GetBestCircularCastPos(Q, target, HER)
+		if Game.CanUseSpell(3) == 0 then
+		pos = GetBestCircularCastPos(R, target, HER)
+		end
+		
+		local Dist = GetDistanceSqr(pos, myHero.pos) - target.boundingRadius*target.boundingRadius
+		pos = myHero.pos + (pos - myHero.pos):Normalized()*(GetDistance(pos, myHero.pos) + 0.5*target.boundingRadius)
+		if Dist > (Q.Range*Q.Range) then
+			pos = myHero.pos + (pos - myHero.pos):Normalized()*Q.Range
+		end
+		if pos:To2D().onScreen and Game.CanUseSpell(0) == 0 then
+			CastSpell(HK_Q, pos, Q.Range, Q.Delay*1000)  
+		end
+	end
+	end
+end
+
+AutoW = function()
+	local target = GetTarget(Q.Range)
+	if target then
+		if Saga.Combo.UseW:Value() and Game.CanUseSpell(1) == 0 then
+			local Tar2Ball = GetDistanceSqr(ball_pos, target.pos) - target.boundingRadius * target.boundingRadius
+			if Tar2Ball < (W.Radius * W.Radius) and Game.CanUseSpell(1) == 0 then
+				Control.CastSpell(HK_W)
+			end
+		end
+	end
+end
+
+AutoR = function()
+
+	local ER, HER = CheckEnemiesHitByR()
+	
+	
+	if ER > 0 and Saga.Combo.UseR:Value() then
+		local kills, pk = CheckPotentialKills(HER)
+		if kills >= Saga.Misc.RCountkills:Value() or pk >= Saga.Misc.RCountpot:Value() and Game.CanUseSpell(3) == 0 then
+			Control.CastSpell(HK_R)
+		end
+		end
+	
+		ER, HER = CheckEnemiesHitByR()
+		if ER and ER >= Saga.Misc.RCount:Value() and Game.CanUseSpell(3) == 0 and Saga.Combo.UseR:Value() then
+			Control.CastSpell(HK_R)
+		end
+end
+
 combBreaker = function()
 	local target = GetTarget(Q.Range)
 	local ER, HER
@@ -684,7 +767,7 @@ combBreaker = function()
 		Control.CastSpell(HK_E, hero)
 	end
 	if Game.CanUseSpell(0) == 0 and Saga.Combo.UseW:Value() then
-		pos = GetBestCircularCastPos(W, target, HER)
+		pos = GetBestCircularCastPos(Q, target, HER)
 		if Game.CanUseSpell(3) == 0 then
 		pos = GetBestCircularCastPos(R, target, HER)
 		end
@@ -695,10 +778,7 @@ combBreaker = function()
 			pos = myHero.pos + (pos - myHero.pos):Normalized()*Q.Range
 		end
 		if pos:To2D().onScreen and Game.CanUseSpell(0) == 0 then
-			CastSpell(HK_Q, pos, Q.Range, Q.Delay*1000) 
-		else
-			if Game.CanUseSpell(0) == 0 then 
-			CastSpellMM(HK_Q, pos, Q.Range, Q.Delay*1000) end 
+			CastSpell(HK_Q, pos, Q.Range, Q.Delay*1000)  
 		end
 	end
 
@@ -754,13 +834,10 @@ end
 	ClearMode = function()
 		if Game.CanUseSpell(0) == 0 then
 			local qMinions = {}
-			local mobs = {}
 			for i = 1, Game.MinionCount() do
 				local minion = Game.Minion(i)
 				if  ValidTargetM(minion,Q.Range)  then
-					if minion.team == 300 then
-						mobs[#mobs+1] = minion
-					elseif minion.isEnemy  then
+					if minion.isEnemy  then
 						qMinions[#qMinions+1] = minion
 					end	
 			end	
@@ -768,12 +845,18 @@ end
 				if BestHit and BestHit >= Saga.Clear.QCount:Value() and Saga.Clear.UseQ:Value() and Game.CanUseSpell(0) == 0 then
 					Control.CastSpell(HK_Q, BestPos) end
 		end
+
+		if Game.CanUseSpell(2) == 0 and Saga.Clear.UseW:Value() then
+			local number, minion = GetMinionsinRangeCount(ball_pos, W.Radius)
+			if number >= Saga.Clear.WCount:Value() then
+				Control.CastSpell(HK_W)
+			end
+		end
 	end
 end
 
 	ClearJungle = function()
 	 
-		local minionlist = {}
 		
 				for i = 1, Game.MinionCount() do
 					local minion = Game.Minion(i)
@@ -920,11 +1003,11 @@ end
 		local potential =  {}
 		for i = 1, #lst do
 			local unit = lst[i]
-			if ball_pos ~= nil or unit.pos ~= nil and validTarget(unit) then
-				if  GetDistance(ball_pos, unit.pos)<= R.Radius and unit.health -GetComboDamage(unit) < 0  then
+			if ball_pos and unit and validTarget(unit) and not unit.dead then
+				if  GetDistance(ball_pos, unit.pos)<= R.Radius and unit.health -GetComboDamage(unit) < 0 and not unit.dead then
 					killable[killCounter] = unit
 					killCounter = killCounter + 1
-				elseif GetDistance(ball_pos, unit.pos)<= R.Radius and (unit.health - GetComboDamage(unit)) < Saga.Misc.RCountpotpercent:Value()*unit.maxHealth or (GetComboDamage(unit) >= 0.3*unit.maxHealth) then
+				elseif GetDistance(ball_pos, unit.pos)<= R.Radius and not unit.dead and (unit.health - GetComboDamage(unit)) < Saga.Misc.RCountpotpercent:Value()*unit.maxHealth or (GetComboDamage(unit) >= 0.3*unit.maxHealth) and not unit.dead then
 					potential[potCounter] = unit
 					potCounter = potCounter + 1
 				end
@@ -1293,7 +1376,7 @@ end
 Saga_Menu =
 function()
 	Saga = MenuElement({type = MENU, id = "Orianna", name = "Saga's Orianna: Balls of Fury", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 3.0.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 3.2.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
 	Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
@@ -1311,7 +1394,7 @@ function()
 	Saga.Clear:MenuElement({id = "UseQ", name = "Q", value = true})
 	Saga.Clear:MenuElement({id = "QCount", name = "Use Q on X minions", value = 3, min = 1, max = 4, step = 1})
 	Saga.Clear:MenuElement({id = "UseW", name = "W[NOT WORKING YET]", value = true})
-	Saga.Clear:MenuElement({id = "WCount", name = "Use W on X minions[NOT WORKING YET]", value = 3, min = 1, max = 4, step = 1})
+	Saga.Clear:MenuElement({id = "WCount", name = "Use W on X minions", value = 3, min = 1, max = 4, step = 1})
 	Saga.Clear:MenuElement({id = "clearActive", name = "Clear key", key = string.byte("V")})
 
 	Saga:MenuElement({id = "Lasthit", name = "Lasthit", type = MENU})
@@ -1322,11 +1405,15 @@ function()
 	Saga.Killsteal:MenuElement({id ="rKS", name = "UseR", value = true})
 
 	Saga:MenuElement({id = "Misc", name = "R Settings", type = MENU})
+	Saga.Misc:MenuElement({id = "UseQ", name = "Auto Q", value = true})
+	Saga.Misc:MenuElement({id = "UseW", name = "Auto W", value = true})
 	Saga.Misc:MenuElement({id = "UseR", name = "R", value = true})
 	Saga.Misc:MenuElement({id = "RCount", name = "Use R on X targets", value = 3, min = 1, max = 5, step = 1})
 	Saga.Misc:MenuElement({id = "RCountkills", name = "Use R on X targets: Gaurantee Kills", value = 1, min = 1, max = 5, step = 1})
 	Saga.Misc:MenuElement({id = "RCountpot", name = "Use R on X targets: Potential Kills", value = 2, min = 1, max = 5, step = 1})
 	Saga.Misc:MenuElement({id = "RCountpotpercent", name = "Min Health for potential kill", value = .3, min = .1, max = 1, step = .1, tooltip = "Recommend .3"})
+
+
 
 	Saga:MenuElement({id = "Rate", name = "Recache Rate", type = MENU})
 	Saga.Rate:MenuElement({id = "champion", name = "Value", value = 30, min = 1, max = 120, step = 1})
