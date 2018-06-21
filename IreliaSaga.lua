@@ -1116,13 +1116,13 @@ end
 function CastETarget(unit)
     if unit and Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit) < E.Range * E.Range then
     local  aim = GetPred(unit,math.huge,0.25+ Game.Latency()/1000)
-        Espot = unit.pos + (myHero.pos - unit.pos): Normalized() * 875
+        Espot = myHero.pos + ( unit.pos - myHero.pos): Normalized() * -100
     
     EUnit = unit
     if Game.CanUseSpell(2) == 0 then
             CastSpell(HK_E, Espot, E.Range, E.Delay * 1000)
             Espot2 = unit.pos + (myHero.pos - unit.pos): Normalized() * -150
-            if myHero:GetSpellData(_E).name == "IreliaE2" then
+            if myHero:GetSpellData(_E).name == "IreliaE2" and Game.CanUseSpell(2) == 0 then
             
             Control.CastSpell(HK_E, Espot2)
             eStun = os.clock()
@@ -1381,7 +1381,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.6.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.7.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
