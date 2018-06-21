@@ -1116,8 +1116,9 @@ end
 function CastETarget(unit)
     if unit and Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit) < E.Range * E.Range then
     local  aim = GetPred(unit,math.huge,0.25+ Game.Latency()/1000)
-        Espot = myHero.pos + ( unit.pos - myHero.pos): Normalized() * -100
-    
+        DisableMovement(true)
+        Espot = myHero.pos + ( unit.pos - myHero.pos): Normalized() * - E.Range
+        DisableMovement(false)
     EUnit = unit
     if Game.CanUseSpell(2) == 0 then
             CastSpell(HK_E, Espot, E.Range, E.Delay * 1000)
@@ -1381,7 +1382,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.7.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.7.2"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
