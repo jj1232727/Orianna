@@ -10,7 +10,7 @@ local SagaTimer = Game.Timer
 local Latency = Game.Latency
 local ping = Latency() * .001
 local Q = { Range1 = 600 , Speed = 1125}
-local W = { Range = 1450,	Width = 100,Speed = 650,Delay = .6, From = myHero, collision = true }
+local W = { Range = 1450,	Width = 60,Speed = 650,Delay = .6, From = myHero, collision = true }
 local E = { Range = 900, Speed = math.huge, Width = 250,	Delay = 1.5}
 local R = { Range = 20000, Speed = 1500, Width = 40,Delay = .6, Radius = 150}
 local atan2 = math.atan2
@@ -379,8 +379,9 @@ minionCollision = function(target, me, position)
     for i = SagaMCount(), 1, -1 do 
         local minion = SagasBitch(i)
         if minion.isTargetable and minion.team == TEAM_ENEMY and minion.dead == false then
-            local linesegment, line, isOnSegment = VectorPointProjectionOnLineSegment(me, position, minion.pos)
-            if linesegment and isOnSegment and (GetDistanceSqr(minion.pos, linesegment) <= (minion.boundingRadius + W.Width) * (minion.boundingRadius + W.Width)) then
+            local aim = GetPred(minion,math.huge,0.6 + Game.Latency()/1000)
+            local linesegment, line, isOnSegment = VectorPointProjectionOnLineSegment(me, position, aim)
+            if linesegment and isOnSegment and (GetDistanceSqr(aim, linesegment) <= (minion.boundingRadius + W.Width) * (minion.boundingRadius + W.Width)) then
                 targemyCounter = targemyCounter + 1
             end
         end
@@ -1172,7 +1173,7 @@ end
 
 LaneClear = function() 
     local mp
-
+    
     local target = GetTarget(W.Range)
         if target and Saga.Clear.UseW:Value() then
         local d = GetDistanceSqr(myHero.pos, target.pos)
@@ -1339,7 +1340,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Jinx: Lets See Pow Pow Thinks", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.8.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.9.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
