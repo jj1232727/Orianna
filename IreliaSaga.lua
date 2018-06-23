@@ -8,7 +8,7 @@ local ping = Latency() * .001
 local Q = { Range = 625}
 local W = { Range = 825, Delay = .60 + ping, Speed = 1400, Radius = 100}
 local E = { Range = 725, Delay = .75 + ping, Speed = 2000, Radius = 50}
-local R = { Range = 1000, Delay = .233 + ping , Speed = 2000, Radius = 160}
+local R = { Range = 1000, Delay = .24 + ping , Speed = 2000, Radius = 160}
 local atan2 = math.atan2
 local MathPI = math.pi
 local _movementHistory = {}
@@ -47,6 +47,7 @@ local acos = math.acos
 local e1clock = 0
 local stonecoldstunner = {}
 local Espot,Espot2, EUnit
+local spaceE = 0
 
 
 
@@ -1114,22 +1115,34 @@ CastW = function(target)
 end
 
 function CastETarget(unit)
+    local aim
     if unit and Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit) < E.Range * E.Range then
-    local  aim = GetPred(unit,math.huge,0.25+ Game.Latency()/1000)
-        DisableMovement(true)
+    aim = GetPred(unit,math.huge,0.25+ Game.Latency()/1000)
+        
         Espot = myHero.pos + ( unit.pos - myHero.pos): Normalized() * - E.Range
-        DisableMovement(false)
+        
     EUnit = unit
-    if Game.CanUseSpell(2) == 0 then
-            CastSpell(HK_E, Espot, E.Range, E.Delay * 1000)
-            Espot2 = unit.pos + (myHero.pos - unit.pos): Normalized() * -150
-            if myHero:GetSpellData(_E).name == "IreliaE2" and Game.CanUseSpell(2) == 0 then
-            
-            Control.CastSpell(HK_E, Espot2)
-            eStun = os.clock()
-            end
-
+    
+        print(Game.CanUseSpell(0))
+    if myHero.attackData.state ~= 2 and myHero:GetSpellData(_E).name == "IreliaE" and os.clock() - spaceE > 1 then
+        if  myHero:GetSpellData(_E).name == "IreliaE2" then  return end
+        Control.Move(Espot2)
+        DisableMovement(true)
+        CastSpell(HK_E, Espot, E.Range, E.Delay * 1000)
+        spaceE = os.clock()
+        DisableMovement(false)
+        
+        
     end
+    
+    end
+    if myHero.attackData.state ~= 2 and myHero:GetSpellData(_E).name == "IreliaE2" then
+        Espot2 = unit.pos + (myHero.pos - unit.pos): Normalized() * -150
+        DisableMovement(true)
+        Control.CastSpell(HK_E, Espot2)
+        Control.Move(Espot2)
+        DisableMovement(false)
+    eStun = os.clock()
     --[[if myHero:GetSpellData(_E).name == "IreliaE2" then
         --local hitchance2, aim2 = GetHitchance(Irelia, unit , E.Range, E.Delay, E.Speed, E.Radius)
         --Espot2 = aim + (myHero.pos - aim): Normalized() * -150
@@ -1151,7 +1164,7 @@ function CastR(unit)
 	if Game.CanUseSpell(3) == 0 and GetDistanceSqr(unit) < R.Range * R.Range and not myHero.pathing.isDashing then
         local hitchance, aim = GetHitchance(Irelia,  unit, R.Range, R.Delay, R.Speed, R.Radius)
         if aim:To2D().onScreen and hitchance >= 2 then
-            CastSpell(HK_R, unit)
+            CastSpell(HK_R, unit, R.Range, R.Delay * 1000)
         end
 	end
 end
@@ -1206,7 +1219,7 @@ Combo =  function()
         targetE = GetTarget(E.Range)
     end
 
-    if targetE and Saga.Combo.UseE:Value() then 
+    if targetE and Saga.Combo.UseE:Value() and Game.CanUseSpell(0) == 0 then 
         CastETarget(targetE)
 
     end
