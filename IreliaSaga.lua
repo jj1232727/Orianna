@@ -1119,18 +1119,17 @@ function CastETarget(unit)
     if unit and Game.CanUseSpell(2) == 0 and GetDistanceSqr(unit) < E.Range * E.Range then
     aim = GetPred(unit,math.huge,0.25+ Game.Latency()/1000)
         
-        Espot = myHero.pos + ( unit.pos - myHero.pos): Normalized() * - E.Range
+        
         
     EUnit = unit
     
-        print(Game.CanUseSpell(0))
-    if myHero.attackData.state ~= 2 and myHero:GetSpellData(_E).name == "IreliaE" and os.clock() - spaceE > 1 then
+        
+    if myHero.attackData.state ~= 2 and myHero:GetSpellData(_E).name == "IreliaE" then
         if  myHero:GetSpellData(_E).name == "IreliaE2" then  return end
-        Control.Move(Espot2)
-        DisableMovement(true)
-        CastSpell(HK_E, Espot, E.Range, E.Delay * 1000)
+        Espot = myHero.pos + ( unit.pos - myHero.pos): Normalized() * - E.Range
+        Control.CastSpell(HK_E, Espot)
         spaceE = os.clock()
-        DisableMovement(false)
+        
         
         
     end
@@ -1139,10 +1138,9 @@ function CastETarget(unit)
     if myHero.attackData.state ~= 2 and myHero:GetSpellData(_E).name == "IreliaE2" then
         Espot2 = unit.pos + (myHero.pos - unit.pos): Normalized() * -150
         DisableMovement(true)
-        Control.CastSpell(HK_E, Espot2)
-        Control.Move(Espot2)
+        CastSpell(HK_E, Espot2, E.Range, .25)
         DisableMovement(false)
-    eStun = os.clock()
+        eStun = os.clock()
     --[[if myHero:GetSpellData(_E).name == "IreliaE2" then
         --local hitchance2, aim2 = GetHitchance(Irelia, unit , E.Range, E.Delay, E.Speed, E.Radius)
         --Espot2 = aim + (myHero.pos - aim): Normalized() * -150
@@ -1250,7 +1248,7 @@ Combo =  function()
     if target and Saga.Combo.UseQ:Value() then
         if Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 1 then
             CastQ(target)
-        elseif os.clock() - eStun > 1.5 and Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 0 and myHero:GetSpellData(_E).name == "IreliaE" then
+        elseif os.clock() - eStun > 1 and Game.CanUseSpell(2) ~= 0 and GotBuff(target, "ireliamark") == 0 and myHero:GetSpellData(_E).name == "IreliaE" then
             CastQ(target)
         end
     end
@@ -1395,7 +1393,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Irelia: Please Don't Nerf Me", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.7.2"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.7.5"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
