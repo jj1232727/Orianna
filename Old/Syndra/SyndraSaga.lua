@@ -1,10 +1,10 @@
-if myHero.charName ~= 'Viktor' then return end
+if myHero.charName ~= 'Syndra' then return end
 
 
 require "MapPosition"
 
-Latency = Game.Latency
-    local Viktor = myHero
+    local Latency = Game.Latency
+    local PurpleBallBitch = myHero
     local ping = Game.Latency()/1000
     local itsReadyBitch = Game.CanUseSpell
     local BallHeroes = Game.HeroCount
@@ -15,10 +15,10 @@ Latency = Game.Latency
     local shit = Game.Object
     local cock = os.clock
 	local SagaIcon = "https://raw.githubusercontent.com/jj1232727/Orianna/master/images/saga.png"
-	local Q = {Range = 650, Width = 50, Delay = 0.25, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 150, From = Viktor}
-	local W = {Range = 700, Delay = 1, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = Viktor}
-	local E = {Range = 525, Width = 50, Radius = 50 ,Delay = .538, Speed = 780, Collision = false, aoe = false, Type = "line", From = Viktor}
-	local R = {Range = 525, Delay = 0.25 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 300, From = Viktor}
+	local Q = {Range = 800, Width = 50, Delay = 0.6 + ping, Speed = 1000, Collision = false, aoe = false, Type = "circular", Radius = 150, From = PurpleBallBitch}
+	local W = {Delay = 0.25 + ping, Speed = 1450, Collision = false, aoe = false, Type = "circular", Radius = 210, From = PurpleBallBitch, Range = 950}
+	local E = {Range = 1000, Width = 50, Delay = ping, Speed = 2000, Radius = 0,Collision = false, aoe = false, Type = "line", From = PurpleBallBitch}
+	local R = {Delay = 0.6 + ping, Speed = 1200, Collision = false, aoe = false, Type = "circular", Radius = 310, From = PurpleBallBitch, Range = 800}
 	local Qdamage = {50, 95, 140, 185, 230}
     local visionTick = GetTickCount()
     local hugeballs = math.huge
@@ -33,17 +33,17 @@ Latency = Game.Latency
     local _EnemyHeroes
     local _OnVision = {}
     local TotalHeroes
-    local TEAM_ALLY = Viktor.team
+    local TEAM_ALLY = PurpleBallBitch.team
     local TEAM_ENEMY = 300 - TEAM_ALLY
+    local bitchList = {"Annie", "Malzahar", "Zyra", "Ivern", "Kalista", "Yorick", "Heimerdinger"}
     local myCounter = 1
     local IDListNumber
     local rDMG
     local finaldamage
-    local rlvl = Viktor:GetSpellData(_R).level
-    local qlvl = Viktor:GetSpellData(_Q).level
+    local rlvl = PurpleBallBitch:GetSpellData(_R).level
+    local qlvl = PurpleBallBitch:GetSpellData(_Q).level
     local dmgQ
     local qDMG
-    
     local eBola
     local isEvading = ExtLibEvade and ExtLibEvade.Evading
     local Tard_RangeCount = 0 -- <3 yaddle
@@ -52,9 +52,6 @@ Latency = Game.Latency
     local wCounter = 0
     local hasball = false
     local _movementHistory = {}
-    local abs = math.abs 
-    local deg = math.deg 
-    local acos = math.acos
     
     
     --WR PREDICTION USAGE ---
@@ -150,7 +147,7 @@ Latency = Game.Latency
     
     local sqrt = math.sqrt
 	GetDistanceSqr = function(p1, p2)
-		p2 = p2 or Viktor
+		p2 = p2 or PurpleBallBitch
 		p1 = p1.pos or p1
 		p2 = p2.pos or p2
 		
@@ -164,60 +161,6 @@ Latency = Game.Latency
 		return sqrt(GetDistanceSqr(p1, p2))
     end
     
-    function GetDistance2D(p1,p2)
-        return sqrt((p2.x - p1.x)*(p2.x - p1.x) + (p2.y - p1.y)*(p2.y - p1.y))
-    end
-    
-    local _OnWaypoint = {}
-    function OnWaypoint(unit)
-        if _OnWaypoint[unit.networkID] == nil then _OnWaypoint[unit.networkID] = {pos = unit.posTo , speed = unit.ms, time = Game.Timer()} end
-        if _OnWaypoint[unit.networkID].pos ~= unit.posTo then 
-            -- print("OnWayPoint:"..unit.charName.." | "..math.floor(Game.Timer()))
-            _OnWaypoint[unit.networkID] = {startPos = unit.pos, pos = unit.posTo , speed = unit.ms, time = Game.Timer()}
-                DelayAction(function()
-                    local time = (Game.Timer() - _OnWaypoint[unit.networkID].time)
-                    local speed = GetDistance2D(_OnWaypoint[unit.networkID].startPos,unit.pos)/(Game.Timer() - _OnWaypoint[unit.networkID].time)
-                    if speed > 1250 and time > 0 and unit.posTo == _OnWaypoint[unit.networkID].pos and GetDistance(unit.pos,_OnWaypoint[unit.networkID].pos) > 200 then
-                        _OnWaypoint[unit.networkID].speed = GetDistance2D(_OnWaypoint[unit.networkID].startPos,unit.pos)/(Game.Timer() - _OnWaypoint[unit.networkID].time)
-                        -- print("OnDash: "..unit.charName)
-                    end
-                end,0.05)
-        end
-        return _OnWaypoint[unit.networkID]
-    end
-    
-    function IsImmobileTarget(unit)
-        for i = 0, unit.buffCount do
-            local buff = unit:GetBuff(i)
-            if buff and (buff.type == 5 or buff.type == 11 or buff.type == 29 or buff.type == 24 or buff.name == "recall") and buff.count > 0 then
-                return true
-            end
-        end
-        return false	
-    end
-    
-    function GetPred(unit,speed,delay)
-        local speed = speed or math.huge
-        local delay = delay or 0.25
-        local unitSpeed = unit.ms
-        if OnWaypoint(unit).speed > unitSpeed then unitSpeed = OnWaypoint(unit).speed end
-        if OnVision(unit).state == false then
-            local unitPos = unit.pos + Vector(unit.pos,unit.posTo):Normalized() * ((GetTickCount() - OnVision(unit).tick)/1000 * unitSpeed)
-            local predPos = unitPos + Vector(unit.pos,unit.posTo):Normalized() * (unitSpeed * (delay + (GetDistance(myHero.pos,unitPos)/speed)))
-            if GetDistance(unit.pos,predPos) > GetDistance(unit.pos,unit.posTo) then predPos = unit.posTo end
-            return predPos
-        else
-            if unitSpeed > unit.ms then
-                local predPos = unit.pos + Vector(OnWaypoint(unit).startPos,unit.posTo):Normalized() * (unitSpeed * (delay + (GetDistance(myHero.pos,unit.pos)/speed)))
-                if GetDistance(unit.pos,predPos) > GetDistance(unit.pos,unit.posTo) then predPos = unit.posTo end
-                return predPos
-            elseif IsImmobileTarget(unit) then
-                return unit.pos
-            else
-                return unit:GetPrediction(speed,delay)
-            end
-        end
-    end
 
     Priority = function(charName)
         local p1 = {"Alistar", "Amumu", "Blitzcrank", "Braum", "Cho'Gath", "Dr. Mundo", "Garen", "Gnar", "Maokai", "Hecarim", "Jarvan IV", "Leona", "Lulu", "Malphite", "Nasus", "Nautilus", "Nunu", "Olaf", "Rammus", "Renekton", "Sejuani", "Shen", "Shyvana", "Singed", "Sion", "Skarner", "Taric", "TahmKench", "Thresh", "Volibear", "Warwick", "MonkeyKing", "Yorick", "Zac", "Poppy", "Ornn"}
@@ -265,11 +208,6 @@ Latency = Game.Latency
           
       end
 
-      ValidTargetM = function(target, range)
-        range = range and range or math.huge
-        return target ~= nil and target.valid and target.visible and not target.dead and target.distance <= range
-    end
-    
     GetEnemyHeroes = function()
         _EnemyHeroes = {}
         for i = 1, Game.HeroCount() do
@@ -414,199 +352,6 @@ Latency = Game.Latency
             return 0
         end
 
-        DisableMovement = function(bool)
-
-            if _G.SDK then
-                _G.SDK.Orbwalker:SetMovement(not bool)
-            elseif _G.EOWLoaded then
-                EOW:SetMovements(not bool)
-            elseif _G.GOS then
-                GOS.BlockMovement = bool
-            end
-         end
-         
-         DisableAttacks = function(bool)
-         
-            if _G.SDK then
-                _G.SDK.Orbwalker:SetAttack(not bool)
-            elseif _G.EOWLoaded then
-                EOW:SetAttacks(not bool)
-            elseif _G.GOS then
-                GOS.BlockAttack = bool
-            end
-         end
-         
-         
-Angle = function(A, B)
-    local deltaPos = A - B
-    local angle = atan2(deltaPos.x, deltaPos.z) * 180 / MathPI
-    if angle < 0 then
-        angle = angle + 360
-    end
-    return angle
-end
-
-PredictReactionTime = function(unit, minimumReactionTime)
-    local reactionTime = minimumReactionTime
-    --If the target is auto attacking increase their reaction time by .15s - If using a skill use the remaining windup time
-    if unit.activeSpell and unit.activeSpell.valid then
-        local windupRemaining = unit.activeSpell.startTime + unit.activeSpell.windup - Timer()
-        if windupRemaining > 0 then
-            reactionTime = windupRemaining
-        end
-    end
-    --If the target is recalling and has been for over .25s then increase their reaction time by .25s
-    local isRecalling, recallDuration = GetRecallingData(unit)
-    if isRecalling and recallDuration > .25 then
-        reactionTime = .25
-    end
-    return reactionTime
-end
-
-GetSpellInterceptTime = function(startPos, endPos, delay, speed)
-    local interceptTime = Latency() / 2000 + delay + sqrt(GetDistanceSqr(startPos, endPos)) / speed
-    return interceptTime
-end
-
-UpdateMovementHistory =
-    function()
-    for i = 1, TotalHeroes do
-        local unit = sHero(i)
-        if not _movementHistory[unit.charName] then
-            _movementHistory[unit.charName] = {}
-            _movementHistory[unit.charName]['EndPos'] = unit.pathing.endPos
-            _movementHistory[unit.charName]['StartPos'] = unit.pathing.endPos
-            _movementHistory[unit.charName]['PreviousAngle'] = 0
-            _movementHistory[unit.charName]['ChangedAt'] = SagaTimer()
-        end
-
-        if
-            _movementHistory[unit.charName]['EndPos'].x ~= unit.pathing.endPos.x or _movementHistory[unit.charName]['EndPos'].y ~= unit.pathing.endPos.y or
-                _movementHistory[unit.charName]['EndPos'].z ~= unit.pathing.endPos.z
-         then
-            _movementHistory[unit.charName]['PreviousAngle'] =
-                Angle(
-                Vector(_movementHistory[unit.charName]['StartPos'].x, _movementHistory[unit.charName]['StartPos'].y, _movementHistory[unit.charName]['StartPos'].z),
-                Vector(_movementHistory[unit.charName]['EndPos'].x, _movementHistory[unit.charName]['EndPos'].y, _movementHistory[unit.charName]['EndPos'].z)
-            )
-            _movementHistory[unit.charName]['EndPos'] = unit.pathing.endPos
-            _movementHistory[unit.charName]['StartPos'] = unit.pos
-            _movementHistory[unit.charName]['ChangedAt'] = SagaTimer()
-        end
-    end
-end
-
-PredictUnitPosition = function(unit, delay)
-    local predictedPosition = unit.pos
-    local timeRemaining = delay
-    local pathNodes = GetPathNodes(unit)
-    for i = 1, #pathNodes - 1 do
-        local nodeDistance = sqrt(GetDistanceSqr(pathNodes[i], pathNodes[i + 1]))
-        local targetMs = GetTargetMS(unit)
-        local nodeTraversalTime = nodeDistance / targetMs
-        if timeRemaining > nodeTraversalTime then
-            --This node of the path will be completed before the delay has finished. Move on to the next node if one remains
-            timeRemaining = timeRemaining - nodeTraversalTime
-            predictedPosition = pathNodes[i + 1]
-        else
-            local directionVector = (pathNodes[i + 1] - pathNodes[i]):Normalized()
-            predictedPosition = pathNodes[i] + directionVector * targetMs * timeRemaining
-            break
-        end
-    end
-    return predictedPosition
-end
-
-GetPathNodes = function(unit)
-    local nodes = {}
-    nodes[myCounter] = unit.pos
-    if unit.pathing.hasMovePath then
-        for i = unit.pathing.pathIndex, unit.pathing.pathCount do
-            local path = unit:GetPath(i)
-            myCounter = myCounter + 1
-            nodes[myCounter] = path
-        end
-    end
-    myCounter = 1
-    return nodes, #nodes
-end
-
-GetImmobileTime = function(unit)
-    local duration = 0
-    for i = 0, unit.buffCount do
-        local buff = unit:GetBuff(i)
-        if
-            buff.count > 0 and buff.duration > duration and
-                (buff.type == 5 or buff.type == 8 or buff.type == 21 or buff.type == 22 or buff.type == 24 or buff.type == 11 or buff.type == 29 or buff.type == 30 or buff.type == 39)
-         then
-            duration = buff.duration
-        end
-    end
-    return duration
-end
-
-GetTargetMS = function(target)
-    local ms = target.pathing.isDashing and target.pathing.dashSpeed or target.ms
-    return ms
-end
-
-UnitMovementBounds = function(unit, delay, reactionTime)
-    local startPosition = PredictUnitPosition(unit, delay)
-    local radius = 0
-    local deltaDelay = delay - reactionTime - GetImmobileTime(unit)
-    if (deltaDelay > 0) then
-        radius = GetTargetMS(unit) * deltaDelay
-    end
-    return startPosition, radius
-end
-
-GetRecallingData = function(unit)
-    for i = 0, unit.buffCount do
-        local buff = unit:GetBuff(i)
-        if buff and buff.name == 'recall' and buff.duration > 0 then
-            return true, Timer() - buff.startTime
-        end
-    end
-    return false
-end
-
-GetHitchance = function(source, target, range, delay, speed, radius)
-    local hitChance = 1
-    local aimPosition = PredictUnitPosition(target, delay + sqrt(GetDistanceSqr(source, target.pos)) / speed)
-    local interceptTime = GetSpellInterceptTime(source, aimPosition, delay, speed)
-    local reactionTime = PredictReactionTime(target, .1)
-    --If they just now changed their path then assume they will keep it for at least a short while... slightly higher chance
-    if _movementHistory and _movementHistory[target.charName] and Timer() - _movementHistory[target.charName]['ChangedAt'] < .25 then
-        hitChance = 2
-    end
-    --If they are standing still give a higher accuracy because they have to take actions to react to it
-    if not target.pathing or not target.pathing.hasMovePath then
-        hitChance = 2
-    end
-    local origin, movementRadius = UnitMovementBounds(target, interceptTime, reactionTime)
-    --Our spell is so wide or the target so slow or their reaction time is such that the spell will be nearly impossible to avoid
-    if movementRadius - target.boundingRadius <= radius / 2 then
-        origin, movementRadius = UnitMovementBounds(target, interceptTime, 0)
-        if movementRadius - target.boundingRadius <= radius / 2 then
-            hitChance = 4
-        else
-            hitChance = 3
-        end
-    end
-    --If they are casting a spell then the accuracy will be fairly high. if the windup is longer than our delay then it's quite likely to hit.
-    --Ideally we would predict where they will go AFTER the spell finishes but that's beyond the scope of this prediction
-    if target.activeSpell and target.activeSpell.valid then
-        if target.activeSpell.startTime + target.activeSpell.windup - Timer() >= delay then
-            hitChance = 5
-        else
-            hitChance = 3
-        end
-    end
-    --Check for out of range
-    
-    return hitChance, aimPosition
-end
-
         local castSpell = {state = 0, tick = GetTickCount(), casting = GetTickCount() - 1000, mouse = mousePos}
         CastSpell = function(spell,pos,range,delay)
         
@@ -614,7 +359,7 @@ end
             local delay = delay or 250
             local ticker = GetTickCount()
         
-            if castSpell.state == 0 and GetDistance(Viktor.pos, pos) < range and ticker - castSpell.casting > delay + Latency() then
+            if castSpell.state == 0 and GetDistance(PurpleBallBitch.pos, pos) < range and ticker - castSpell.casting > delay + Latency() then
                 castSpell.state = 1
                 castSpell.mouse = mousePos
                 castSpell.tick = ticker
@@ -703,78 +448,20 @@ end
             end
         end
 
-        GetEnemiesinRangeCount = function(target,range)
-            local inRadius =  {}
-            
-            for i = 1, TotalHeroes do
-                local unit = _EnemyHeroes[i]
-                if unit.pos ~= nil and validTarget(unit) then
-                    if  GetDistance(target.pos, unit.pos) <= range then
-                                        
-                        inRadius[myCounter] = unit
-                        myCounter = myCounter + 1
-                    end
-                end
-            end
-                myCounter = 1
-            return #inRadius, inRadius
-        end
-
-        IsFacing = function(unit)
-            local V = Vector((unit.pos - myHero.pos))
-            local D = Vector(unit.dir)
-            local Angle = 180 - deg(acos(V*D/(V:Len()*D:Len())))
-            if abs(Angle) < 80 then 
-                return true  
-            end
-            return false
-        end
-
-        function GetDamage(spell, unit)
-            local damage = 0
-            local AD = myHero.totalDamage
-            local AP = myHero.ap
-            
-        
-        
-            if spell == HK_Q then
-                if Game.CanUseSpell(0) == 0 then
-                    damage = CalcMagicalDamage(myHero ,unit, (myHero:GetSpellData(_Q).level * 20 + 40) + AP * 0.4)
-
-                end
-            elseif spell == HK_E then
-                if Game.CanUseSpell(2) == 0 then
-                    damage = CalcMagicalDamage(myHero,unit, (myHero:GetSpellData(_E).level * 40 + 30) + AP * 0.5)
-                end
-            elseif spell == HK_R then
-                if Game.CanUseSpell(3) == 0 then
-                    damage = CalcMagicalDamage(myHero, unit, (myHero:GetSpellData(_R).level * 75 + 25) + AP * 0.5)
-                end
-        
-            end
-            return damage
-        end
-
     LocalCallbackAdd(
     'Load',
 	function()
         
         TotalHeroes = GetEnemyHeroes()
+        IDListNumber = GetHeroesWithBitches()
         Saga_Menu()
-
-        if #_EnemyHeroes > 0 then 
-            for i = 1, TotalHeroes do
-                local hero = _EnemyHeroes[i]
-            Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
-            end 
+        if Game.Timer() > Saga.Rate.champion:Value() then
+        for i = 1, TotalHeroes do
+            local hero = _EnemyHeroes[i]
+        Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
         end
-
-        if Game.Timer() > Saga.Rate.champion:Value() and #_EnemyHeroes == 0  then
-            for i = 1, TotalHeroes do
-                local hero = _EnemyHeroes[i]
-            Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
-            end
-        end
+    end
+        
 
 		local orbwalkername = ""
 		local orb
@@ -798,34 +485,41 @@ LocalCallbackAdd(
     function()
             if Game.Timer() > Saga.Rate.champion:Value() and #_EnemyHeroes == 0 then
                 TotalHeroes = GetEnemyHeroes()
+                IDListNumber = GetHeroesWithBitches()
                 for i = 1, TotalHeroes do
                     local hero = _EnemyHeroes[i]
                 Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
                 end
-                
+
             end
             if #_EnemyHeroes == 0 then return end
-            
             OnVisionF()
             UpdateMovementHistory()
             if myHero.dead or Game.IsChatOpen() == true  or isEvading then return end
 
-            Killsteal()
+            if ball_counter + 500 < GetTickCount() then
+                ballsearch()
+            end
 
-            if Saga.Combo.comboActive:Value() and Viktor.attackData.state ~= 2 then
+            
+
+            if Saga.Auto.useAutoQ:Value() then
+                AutoQ()
+            end
+            if Saga.Combo.comboActive:Value() and PurpleBallBitch.attackData.state ~= 2 then
                 Combo()
             end
             if Saga.Harass.harassActive:Value() then
-                Harass()
+                HarassMode()
             end
             if Saga.Clear.clearActive:Value() then
-                LaneClear()
+                ClearMode()
                 ClearJungle()
             end
             if Saga.Lasthit.lasthitActive:Value() then
-                LastHit()
+                LastHitMode()
             end
-            
+            UpdateDamage()
 
             --if  cock() - hpredTick > 10 then
                 
@@ -835,224 +529,12 @@ LocalCallbackAdd(
 
         LocalCallbackAdd(
     'Draw', function()
-        if Saga.Drawings.Q.Enabled:Value() then Draw.Circle(Viktor.pos, Q.Range, 0, Saga.Drawings.Q.Color:Value()) end
-        if Saga.Drawings.W.Enabled:Value() then Draw.Circle(Viktor.pos, W.Range, 0, Saga.Drawings.W.Color:Value()) end
-        if Saga.Drawings.E.Enabled:Value() then Draw.Circle(Viktor.pos, E.Range + 650, 0, Saga.Drawings.E.Color:Value()) end
-        if Saga.Drawings.R.Enabled:Value() then Draw.Circle(Viktor.pos, R.Range, 0, Saga.Drawings.R.Color:Value()) end
+        if Saga.Drawings.Q.Enabled:Value() then Draw.Circle(PurpleBallBitch.pos, Q.Range, 0, Saga.Drawings.Q.Color:Value()) end
+        if Saga.Drawings.W.Enabled:Value() then Draw.Circle(PurpleBallBitch.pos, W.Range, 0, Saga.Drawings.W.Color:Value()) end
+        if Saga.Drawings.E.Enabled:Value() then Draw.Circle(PurpleBallBitch.pos, E.Range, 0, Saga.Drawings.E.Color:Value()) end
+        if Saga.Drawings.R.Enabled:Value() then Draw.Circle(PurpleBallBitch.pos, R.Range, 0, Saga.Drawings.R.Color:Value()) end
         
-        for i= 1, TotalHeroes do
-            local hero = _EnemyHeroes[i]
-			local barPos = hero.hpBar
-			if not hero.dead and hero.pos2D.onScreen and barPos.onScreen and hero.visible then
-				local QDamage = Game.CanUseSpell(0) == 0 and GetDamage(HK_Q,hero) or 0
-				local WDamage = Game.CanUseSpell(1) == 0 and GetDamage(HK_W,hero) or 0
-				local EDamage = Game.CanUseSpell(2) == 0 and GetDamage(HK_E,hero) or 0
-				local RDamage = Game.CanUseSpell(3) == 0 and GetDamage(HK_R,hero) or 0
-                local damage = QDamage + WDamage + RDamage + EDamage
-				if damage > hero.health then
-					Draw.Text("KILL NOW", 30, hero.pos2D.x - 50, hero.pos2D.y + 50,Draw.Color(200, 255, 87, 51))				
-                end
-				end
-                end
     end)
-
-    Killsteal = function()
-        
-        local QTarget = GetTarget(Q.Range)
-        if QTarget and Saga.KillSteal.qKS:Value() then 
-            if GetDamage(HK_Q, QTarget) > (QTarget.health + QTarget.shieldAD + QTarget.shieldAP) then
-            CastQ(QTarget)
-            end
-        end
-
-        local ETarget = GetTarget(E.Range)
-        if ETarget and Saga.KillSteal.qKS:Value() then 
-            if GetDamage(HK_E, ETarget) > (ETarget.health + ETarget.shieldAD + ETarget.shieldAP) then
-            CastE(ETarget)
-            end
-        end
-        local RTarget = GetTarget(R.Range)
-        if RTarget then 
-            local number, enemies = GetEnemiesinRangeCount(RTarget, R.Radius)
-            if (GetDamage(HK_R, RTarget) > (RTarget.health + RTarget.shieldAD + RTarget.shieldAP) and Saga.KillSteal.rKS[RTarget.charName]:Value())  then
-            end 
-            if (number >= Saga.Misc.RCount:Value() and Saga.KillSteal.rKS[RTarget.charName]:Value()) then
-                CastR(RTarget) 
-            end
-        end
-
-
-    end
-
-
-    Combo = function()
-
-        local RTarget = GetTarget(R.Range)
-        if RTarget and Saga.Combo.UseR:Value() then 
-            local number, enemies = GetEnemiesinRangeCount(RTarget, R.Radius)
-            if (GetDamage(HK_R, RTarget) > (RTarget.health + RTarget.shieldAD + RTarget.shieldAP) and Saga.KillSteal.rKS[RTarget.charName]:Value()) or (number >= Saga.Misc.RCount:Value() and Saga.KillSteal.rKS[RTarget.charName]:Value()) then
-            CastR(RTarget) end 
-        end
-
-        local QTarget = GetTarget(Q.Range)
-        if QTarget and Saga.Combo.UseQ:Value() then 
-            CastQ(QTarget)
-        end
-
-        local WTarget = GetTarget(W.Range)
-        if WTarget and Saga.Combo.UseW:Value() then 
-            CastW(WTarget)
-        end
-
-        local ETarget = GetTarget(E.Range + 650)
-        if ETarget and Saga.Combo.UseE:Value() then 
-            CastE(ETarget)
-        end
-    end
-
-    Harass = function()
-        local QTarget = GetTarget(Q.Range)
-        if QTarget and Saga.Harass.UseQ:Value()then 
-            CastQ(QTarget)
-        end
-
-        local ETarget = GetTarget(E.Range + 650)
-        if ETarget and Saga.Harass.UseE:Value() then 
-            CastE(ETarget)
-        end
-    end
-
-
-
-    LaneClear = function()
-        if Game.CanUseSpell(0) == 0 then
-            for i = 1, Game.MinionCount() do
-            local minion = Game.Minion(i)
-            if minion.pos:DistanceTo() <= Q.Range and minion.isEnemy and not minion.dead and Game.CanUseSpell(0) == 0 then
-                dmgQ = GetDamage(HK_Q, minion)
-                if dmgQ >= minion.health and Saga.Clear.UseQ:Value() then
-                    CastSpell(HK_Q,minion, Q.Range)
-                end
-                dmgE = GetDamage(HK_E, minion)
-                if dmgE >= minion.health and Saga.Clear.UseE:Value() then
-                    CastE(minion)
-                end
-            end
-        end
-        end
-    end
-
-    ClearJungle = function()
-	 
-		local minionlist = {}
-		
-				for i = 1, Game.MinionCount() do
-					local minion = Game.Minion(i)
-					
-					
-					if string.find(minion.name, "SRU") then
-						if minion.valid and minion.isEnemy and minion.pos:DistanceTo(myHero.pos) < 825 and Game.CanUseSpell(0) == 0 and not minion.dead then
-							CastQ(minion)
-						end
-						if minion.valid and minion.isEnemy and not minion.dead and minion.pos:DistanceTo(ball_pos) < 240 and Game.CanUseSpell(1)== 0 then
-							CastE(minion)
-						end
-						end
-					end
-	end
-
-
-    LastHitMode = function()
-        if Game.CanUseSpell(0) == 0 and Saga.Lasthit.UseQ:Value() then
-                for i = 1, Game.MinionCount() do
-                local minion = Game.Minion(i)
-                if minion.pos:DistanceTo() <= Q.Range and Saga.Lasthit.UseQ:Value() and minion.isEnemy and not minion.dead and Game.CanUseSpell(0) == 0 then
-                    dmgQ = GetDamage(HK_Q, minion)
-                    if dmgQ >= minion.health then
-                        CastSpell(HK_Q,minion, Q.Range)
-                    end
-                end
-            end
-        end
-    end
-
-
-
-    CastQ = function(target)
-        
-        if Game.CanUseSpell(0) == 0 and GetDistanceSqr(target) < Q.Range * Q.Range then
-            CastSpell(HK_Q, target, Q.Range)
-        end
-    end
-
-    CastW = function(target)
-        local number, enemies = GetEnemiesinRangeCount(target, W.Radius)
-        if Game.CanUseSpell(1) == 0 and GetDistanceSqr(target) < W.Range * W.Range then
-            local Wpos = GetBestCircularCastPos(W, target, enemies)
-            
-            local Dist = GetDistanceSqr(Wpos, myHero.pos) - target.boundingRadius*target.boundingRadius
-            Wpos = myHero.pos + (Wpos - myHero.pos):Normalized()*(GetDistance(Wpos, myHero.pos) + 0.5*target.boundingRadius)
-            if Dist > (W.Range*W.Range) then
-                Wpos = myHero.pos + (Wpos - myHero.pos):Normalized()*W.Range
-                dWPOS = Wpos
-                wt = target
-            end
-            
-            CastSpell(HK_W, Wpos, W.Range, W.Delay * 1000)
-        end
-        
-    end
-
-    CastR = function(target)
-        local number, enemies = GetEnemiesinRangeCount(target, R.Radius)
-        if Game.CanUseSpell(3) == 0 and GetDistanceSqr(target) < R.Range * R.Range then
-            local Rpos = GetBestCircularCastPos(R, target, enemies)
-            local Dist = GetDistanceSqr(Rpos, myHero.pos) - target.boundingRadius*target.boundingRadius
-            Rpos = myHero.pos + (Rpos - myHero.pos):Normalized()*(GetDistance(Rpos, myHero.pos) + 0.5*target.boundingRadius)
-            if Dist > (R.Range*R.Range) then
-                Rpos = myHero.pos + (Rpos - myHero.pos):Normalized()*W.Range
-            end
-            CastSpell(HK_R, Rpos)
-        end
-    end
-
-    CastE = function(target)
-        --local spot2
-        if (Game.Timer() - OnWaypoint(target).time < 0.15 or Game.Timer() - OnWaypoint(target).time > 1.0) and Game.CanUseSpell(2)== 0 and GetDistance(target) < E.Range + 500  * E.Range + 500 then
-            local spot, spot2
-            local Epos = GetPred(target,R.Range, E.Delay * 1000)
-            
-            --local Distance = GetDistance(Epos) + 250
-              --[[if  GetDistanceSqr(Epos) > E.Range * E.Range then
-                  Distance = GetDistance(Epos) - 500
-              end]]--
-                --
-                local d = GetDistance(target) / 2
-              spot = target.pos + (myHero.pos - target.pos): Normalized() * E.Range
-              spot2 = Vector(spot):Extended(Vector(Epos),50) 
-            if target.pos:DistanceTo() < E.Range then
-                spot = myHero.pos + (target.pos - myHero.pos):Normalized() * d
-                spot2 = Vector(spot):Extended(Vector(Epos), 50)
-            end
-            local nE = E.Range - 100
-            local Dist = GetDistanceSqr(spot2, myHero.pos) - target.boundingRadius*target.boundingRadius
-            --[[local nE = E.Range - 300
-            if Dist > E.Range + 650 then
-                print("true")
-                spot = myHero.pos + (target.pos - myHero.pos):Normalized() * nE
-            end]]--
-            if target.pos:DistanceTo() < spot2:DistanceTo() then
-                local nR = E.Range + 1
-                spot2 = myHero.pos + (spot2 - myHero.pos): Normalized() * nR
-            end
-            if spot and spot2 then 
-                CastSpell(HK_E, spot, E.Range, E.Delay * 1000) 
-                Control.CastSpell(HK_E, spot2)
-                
-            end
-        end
-    end
-
 
     validTarget = function(unit)
         if unit and unit.isEnemy and unit.valid and unit.isTargetable and not unit.dead and not unit.isImmortal and not (GotBuff(unit, 'FioraW') == 1) and
@@ -1061,9 +543,377 @@ LocalCallbackAdd(
         else 
             return false
         end
+    end    
+
+AutoQ = function()
+    local targetQ = GetTarget(Q.Range)
+                if targetQ then
+                    if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and targetQ.pos:DistanceTo() <= Q.Range then 
+                    local Qpos = GetBestCastPosition(targetQ, Q)
+                    if Qpos:DistanceTo() > Q.Range then 
+                    Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*Q.Range
+                    end
+                    Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*(GetDistance(Qpos, PurpleBallBitch.pos) + 0.5*targetQ.boundingRadius)
+                    if Qpos:To2D().onScreen then
+                        Control.CastSpell(HK_Q, Qpos) 
+                    end
+                    end
+                end 
+end
+Combo = function()
+    local targetR = GetTarget(R.Range)
+-----------------------------R USAGE ----------------------------------------------------
+                if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(3) == 0 and Saga.Combo.UseR:Value() then
+                    rDMG = 0
+                    local balls = PurpleBallBitch:GetSpellData(_R).ammo
+                        if targetR then
+                            local ap = .2*PurpleBallBitch.ap
+                            rDMG = (finaldamage + ap ) * balls
+
+                    local totalrDMG = CalcMagicalDamage(PurpleBallBitch, targetR, rDMG)
+                    
+                    if totalrDMG > (targetR.health + targetR.shieldAD + targetR.shieldAP) and targetR.pos:DistanceTo() <= R.Range and Saga.KillSteal.rKS[targetR.charName]:Value() then
+                        CastSpell(HK_R, targetR)
+                    end
+                end
+                end
+
+                -----------------------------------------------Q USAGE---------------------------------------------
+---------------------------------QE Usage------------------------------------------------------------------
+local target = GetTarget(1100)
+--if target then
+--if PurpleBallBitch.dead or Game.IsChatOpen() == true  or IsEvading() == true then return end
+--[[if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and  itsReadyBitch(2) == 0 and Saga.Combo.UseE:Value() then
+    if target.pos:DistanceTo() > Q.Range then
+    local posE, posEC, hitchance = GetBestCastPosition(target, E)
+    local pos = PurpleBallBitch.pos + (posE - PurpleBallBitch.pos):Normalized() * 600
+    if itsReadyBitch(2) == 0 and itsReadyBitch(0) == 0 and hitchance >= 2 then
+    if pos:To2D().onScreen then
+        CastSpell(HK_Q, pos, Q.Range)
+        CastSpell(HK_E, pos, E.Range, 1000 + ping)
+    else
+        CastSpellMM(HK_Q, pos, Q.Range)
+        CastSpellMM(HK_E, pos, E.Range, 1000 + ping)
+    end
+    end
+    elseif target.pos:DistanceTo() <= Q.Range then
+        local posE, posEC, hitchance = GetBestCastPosition(target, E)
+        if posE:DistanceTo() > Q.Range and hitchance > 2 then
+            pos = PurpleBallBitch.pos + (posE - PurpleBallBitch.pos):Normalized()*Q.Range
+            end
+            pos = PurpleBallBitch.pos + (posE - PurpleBallBitch.pos):Normalized()*(GetDistance(posE, PurpleBallBitch.pos) + 0.5*target.boundingRadius)
+            if hitchance >= 2 then
+                if pos:To2D().onScreen then
+                    CastSpell(HK_E, pos, E.Range)
+                    CastSpell(HK_Q, pos, Q.Range)
+                end
+        
+        end
+        
     end
 
-    VectorMovementCollision = function (startPoint1, endPoint1, v1, startPoint2, v2, delay)
+end
+end]]--
+
+if target then
+    if Game.CanUseSpell(0) == 0 and Game.CanUseSpell(2) == 0 and Saga.Combo.UseE:Value() then--E + Q at max range
+        --Update the EQ speed and the range
+        local d = Q.Range / E.Speed 
+        local QEpos, qecpos, hitchance = GetBestCastPosition(target, E)
+        local EQpos, eqcpos, eqhitchance = GetBestCastPosition(target, Q)
+        local pos
+        if GetDistance(myHero.pos, target.pos) > Q.Range then
+            pos = Vector(myHero.pos) + (Vector(QEpos) - Vector(myHero.pos)):Normalized() * 700 
+        else
+            pos = PurpleBallBitch.pos + (EQpos - PurpleBallBitch.pos):Normalized()*(GetDistance(EQpos, PurpleBallBitch.pos) + 0.5*target.boundingRadius)
+        end
+        if GetDistance(QEpos, pos) <= (-0.6 * 700 + 966) and PurpleBallBitch.attackData.state ~= 2 then
+            CastSpell(HK_Q, pos)
+            CastSpell(HK_E, pos, E.Range, .03 * 1000)
+        end
+    end
+end
+
+local targetQ = GetTarget(Q.Range)
+    if targetQ then
+        if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(0) == 0 and targetQ.pos:DistanceTo() <= Q.Range  and Saga.Combo.UseQ:Value() then
+            if itsReadyBitch(2) == 0 and Saga.Combo.UseE:Value() then return end 
+            local Qpos, qcpos, hitchance = GetBestCastPosition(targetQ, Q)
+            if hitchance >= 2 then
+            if Qpos:DistanceTo() > Q.Range then 
+                Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*Q.Range
+                end
+            Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*(GetDistance(Qpos, PurpleBallBitch.pos) + 0.5*targetQ.boundingRadius)
+            if Qpos:To2D().onScreen then
+                CastSpell(HK_Q, Qpos, Q.Range, Q.Delay * 1000) 
+            else
+                CastSpellMM(HK_Q, Qpos, Q.Range, Q.Delay * 1000)
+            end
+            end
+          end
+    end 
+-----------------------------------------W Usage-----------------------------------------------                
+                local targetW = GetTarget(W.Range)
+                if targetW then
+
+                if not hasball and PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() <= W.Range and GotBuff(myHero, "syndrawtooltip") == 0 and Saga.Combo.UseW:Value() and os.clock() - wCounter > .7 then
+                    if IDList then 
+                    local bitch, bitchpos = findPet() end
+                    if bitch  then
+                        Control.CastSpell(HK_W, bitchpos, W.Range)
+    
+                    elseif not bitch and #thesenuts ~= 0 then
+                        for i = 1, #thesenuts do 
+                            local ballQ = thesenuts[i]
+                            if ballQ and ballQ:DistanceTo() <= W.Range then
+                                Control.CastSpell(HK_W, ballQ)
+                                
+                            end
+                        end
+                    elseif not bitch and #thesenuts == 0 then 
+                        local minionb, minionposb = findMinion()
+                        if not minionb then return end
+                        Control.CastSpell(HK_W, minionposb)
+                        
+                        
+                    end
+                    wCounter = os.clock()
+                end
+            if itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() <= W.Range and Saga.Combo.UseW:Value() and os.clock() - wCounter > 1 then
+                local targetW2 = GetTarget(W.Range)
+                local W2Pos, WCPos, hitchance = GetBestCastPosition(targetW2, W)
+                if W2Pos:DistanceTo() > W.Range and hitchance >= 2 then 
+                    W2Pos = PurpleBallBitch.pos + (W2Pos - PurpleBallBitch.pos):Normalized()*W.Range
+                    
+                    end
+                    if W2Pos:DistanceTo() < W.Range and hitchance >= 2 then
+                    W2Pos = PurpleBallBitch.pos + (W2Pos - PurpleBallBitch.pos):Normalized()*(GetDistance(W2Pos, PurpleBallBitch.pos) + 0.5*targetW2.boundingRadius) end
+                    if W2Pos:To2D().onScreen then
+                        Control.CastSpell(HK_W, W2Pos)
+                    end
+                    wCounter = os.clock()
+            end
+        end 
+
+
+
+
+
+            -----------------------------------E Usage--------------------------
+           if PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(2) == 0 and Saga.Combo.UseER:Value() then
+                if itsReadyBitch(0) == 0 and Saga.Combo.UseE:Value() then return end    
+                local targetER = findEmemy(1000)
+                eBola(targetER, PurpleBallBitch.pos) 
+                
+           end
+           ----------------------------------------------------------------------
+end
+
+HarassMode = function()
+    local targetQ = GetTarget(Q.Range)
+                if targetQ then
+                    if itsReadyBitch(0) == 0 and targetQ.pos:DistanceTo() < Q.Range and Saga.Harass.UseQ:Value()then 
+                    local Qpos, posQC, hitchance = GetBestCastPosition(targetQ, Q)
+                    if Qpos:DistanceTo() > Q.Range then 
+                    Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*Q.Range
+                    end
+                    Qpos = PurpleBallBitch.pos + (Qpos - PurpleBallBitch.pos):Normalized()*(GetDistance(Qpos, PurpleBallBitch.pos) + 0.5*targetQ.boundingRadius)
+                    if hitchance >= 2 then 
+                    Control.CastSpell(HK_Q, Qpos) end 
+                    end
+                end
+                
+                local targetW = GetTarget(W.Range)
+                if targetW then
+
+                if not hasball and PurpleBallBitch.attackData.state ~= 2 and itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() <= W.Range and GotBuff(myHero, "syndrawtooltip") == 0 and Saga.Harass.UseW:Value() and os.clock() - wCounter > .7 then
+                    if IDList then 
+                    local bitch, bitchpos = findPet() end
+                    if bitch  then
+                        Control.CastSpell(HK_W, bitchpos)
+    
+                    elseif not bitch and #thesenuts ~= 0 then
+                        for i = 1, #thesenuts do 
+                            local ballQ = thesenuts[i]
+                            if ballQ and ballQ:DistanceTo() <= W.Range then
+                                Control.CastSpell(HK_W, ballQ)
+                                
+                            end
+                        end
+                    elseif not bitch and #thesenuts == 0 then 
+                        local minionb, minionposb = findMinion()
+                        if not minionb then return end
+                        Control.CastSpell(HK_W, minionposb)
+                        
+                        
+                    end
+                    wCounter = os.clock()
+                end
+            if itsReadyBitch(1) == 0 and targetW.pos:DistanceTo() <= W.Range and Saga.Harass.UseW:Value() and os.clock() - wCounter > 1 then
+                local targetW2 = GetTarget(W.Range)
+                local W2Pos, WCPos, hitchance = GetBestCastPosition(targetW2, W)
+                if W2Pos:DistanceTo() > W.Range and hitchance >= 2 then 
+                    W2Pos = PurpleBallBitch.pos + (W2Pos - PurpleBallBitch.pos):Normalized()*W.Range
+                    
+                    end
+                    if W2Pos:DistanceTo() < W.Range and hitchance >= 2 then
+                    W2Pos = PurpleBallBitch.pos + (W2Pos - PurpleBallBitch.pos):Normalized()*(GetDistance(W2Pos, PurpleBallBitch.pos) + 0.5*targetW2.boundingRadius) end
+                    if W2Pos:To2D().onScreen then
+                        Control.CastSpell(HK_W, W2Pos)
+                    end
+                    wCounter = os.clock()
+            end
+        end  
+
+end
+
+ValidTargetM = function(target, range)
+    range = range and range or math.huge
+    return target ~= nil and target.valid and target.visible and not target.dead and target.distance <= range
+end
+
+ClearMode = function()
+    if Game.CanUseSpell(0) == 0 then
+        local qMinions = {}
+        for i = 1, Game.MinionCount() do
+            local minion = Game.Minion(i)
+            if  ValidTargetM(minion,Q.Range)  then
+                if minion.team == TEAM_ENEMY  then
+                    qMinions[#qMinions+1] = minion
+                end	
+        end	
+            local BestPos, BestHit = GetBestCircularCastPos(Q, nil, qMinions)
+            if BestHit and BestHit >= Saga.Clear.QCount:Value() and Saga.Clear.UseQ:Value() and Game.CanUseSpell(0) == 0 then
+                Control.CastSpell(HK_Q, BestPos) end
+            
+    end
+end
+end
+
+ClearJungle = function()
+	 
+    
+            for i = 1, Game.MinionCount() do
+                local minion = Game.Minion(i)
+                
+                
+                if string.find(minion.name, "SRU") then
+                    if minion.valid and minion.isEnemy and minion.pos:DistanceTo(myHero.pos) <= 825 and Game.CanUseSpell(0) == 0 and not minion.dead and minion.visible then
+                        Control.CastSpell(HK_Q,minion.pos)
+                    end
+                    
+                    if minion.valid and minion.isEnemy and minion.pos:DistanceTo(myHero.pos) <= 825 and Game.CanUseSpell(1) == 0 and not minion.dead and PurpleBallBitch:GetSpellData(_W).toggleState == 1 and minion.visible and thesenuts then
+                    for k = 1, #thesenuts do
+                        local thisnut = thesenuts[k]
+                        if thisnut and thisnut:DistanceTo() <= W.Range then 
+                        Control.CastSpell(HK_W, thisnut)
+                        end
+                    end
+                        
+                    end
+
+                if minion.valid and minion.isEnemy and minion.pos:DistanceTo(myHero.pos) < 825 and Game.CanUseSpell(1) == 0 and not minion.dead and PurpleBallBitch:GetSpellData(_W).toggleState == 2 and minion.visible then
+                    CastSpell(HK_W, minion.pos) end 
+                    end
+                end
+end
+
+LastHitMode = function()
+    if Game.CanUseSpell(0) == 0 and Saga.Lasthit.UseQ:Value() then
+            for i = 1, Game.MinionCount() do
+            local minion = Game.Minion(i)
+            if Game.CanUseSpell(0) ~= 0 then dmgQ = 0 else
+                if qlvl < 5 then 
+                    qDMG = CalcMagicalDamage(myHero,minion,dmgQ + 0.65 * myHero.ap) 
+                elseif qlvl == 5 then
+                    qDMG = CalcMagicalDamage(myHero,minion,264.5 + 0.7475 * myHero.ap)
+                end
+            end
+            if minion.pos:DistanceTo() <= Q.Range and Saga.Lasthit.UseQ:Value() and minion.isEnemy and not minion.dead and Game.CanUseSpell(0) == 0 then
+                if dmgQ >= minion.health then
+                    Control.CastSpell(HK_Q,minion)
+                end
+            end
+        end
+    end
+end
+
+
+GetHeroesWithBitches = function()
+    for i = 1, TotalHeroes do
+    local unit = _EnemyHeroes[i]
+    for k = 1, #bitchList do
+    local bitches = bitchList[k]
+        if bitches and unit  then
+           if unit.charName == bitches then
+           IDList[myCounter] = unit
+           myCounter = myCounter + 1
+           end
+        end
+        end
+    end
+    myCounter = 1
+    return #IDList
+end
+
+findPet = function()
+    if not IDList  then return end
+    local minion
+    for i = 1, IDListNumber do
+        local bitchOwner = IDList[i]
+        
+        for q = 1, smallshits() do
+            minion = littleshit(q)
+            if minion.owner and minion.pos:DistanceTo() <= W.Range and minion.owner.charName == bitchOwner.charName and minion.isTargetable and minion.isEnemy and not minion.dead and minion.visible then
+                return minion, minion.pos
+            end
+        end
+    end
+end
+
+ballsearch = function()
+    local thesenutties = {}
+    if ball_counter + 50 > GetTickCount() then return end
+	for i = 1, shitaround() do
+        local object = shit(i)
+		if object and object.valid and not object.dead and object.visible then
+			if object.charName:lower() == "syndrasphere" and not table.contains(thesenutties, object.pos) and object.pos:DistanceTo() < W.Range then
+                thesenutties[myCounter] = object.pos
+                myCounter = myCounter + 1
+			end
+		end
+    end
+    myCounter = 1
+    thesenuts = thesenutties
+    ball_counter = GetTickCount()
+end
+
+VectorPointProjectionOnLineSegment = function(v1, v2, v)
+	local cx, cy, ax, ay, bx, by = v.x, v.z, v1.x, v1.z, v2.x, v2.z
+	local rL = ((cx - ax) * (bx - ax) + (cy - ay) * (by - ay)) / ((bx - ax) * (bx - ax) + (by - ay) * (by - ay))
+	local pointLine = { x = ax + rL * (bx - ax), z = ay + rL * (by - ay) }
+	local rS = rL < 0 and 0 or (rL > 1 and 1 or rL)
+	local isOnSegment = rS == rL
+	local pointSegment = isOnSegment and pointLine or {x = ax + rS * (bx - ax), z = ay + rS * (by - ay)}
+	return pointSegment, pointLine, isOnSegment
+end 
+
+eBola = function(target, me)
+    for i = 1, #thesenuts do 
+        local ball = thesenuts[i]
+        if target and ball and ball:DistanceTo() <= 700 and PurpleBallBitch.attackData.state ~= 2 then
+            local posE, posEC, hitchance = GetBestCastPosition(target, E)
+            local linesegment, line, isOnSegment = VectorPointProjectionOnLineSegment(me, posE, ball)
+            if linesegment and isOnSegment and (GetDistanceSqr(ball, linesegment) <= Q.Width * Q.Width) and itsReadyBitch(2) == 0 and target.pos:DistanceTo() < E.Range then
+                CastSpell(HK_E, posE, E.Range)
+            end
+        end
+    end
+end
+
+
+
+VectorMovementCollision = function (startPoint1, endPoint1, v1, startPoint2, v2, delay)
 	local sP1x, sP1y, eP1x, eP1y, sP2x, sP2y = startPoint1.x, startPoint1.z, endPoint1.x, endPoint1.z, startPoint2.x, startPoint2.z
 	local d, e = eP1x-sP1x, eP1y-sP1y
 	local dist, t1, t2 = sqrt(d*d+e*e), nil, nil
@@ -1240,7 +1090,7 @@ GetBestCastPosition = function (unit, spell)
 	local range = spell.Range and spell.Range - 15 or hugeballs
 	local radius = spell.Radius == 0 and 1 or (spell.Radius + unit.boundingRadius) - 4
 	local speed = spell.Speed or hugeballs
-	local from = spell.From or Viktor
+	local from = spell.From or PurpleBallBitch
 	local delay = spell.Delay + (0.07 + Latency() / 2000)
 	local collision = spell.Collision or false
 	
@@ -1314,7 +1164,7 @@ end
 
 GetBestCircularCastPos = function(spell, sTar, lst)
 	local average = {x = 0, z = 0, count = 0} 
-	local heroList = lst and lst[1] and (lst[1].type == Viktor.type)
+	local heroList = lst and lst[1] and (lst[1].type == PurpleBallBitch.type)
 	local range = spell.Range or 2000
 	local radius = spell.Radius or 50
 	
@@ -1361,7 +1211,7 @@ end
 end
 	
 	--
-	local point = Vector(average.x,Viktor.pos.y,average.z)
+	local point = Vector(average.x,PurpleBallBitch.pos.y,average.z)
 	--
 	if lst then
 	if inRange == #lst then 
@@ -1375,8 +1225,8 @@ end
 end
 
 GetBestLinearCastPos = function(spell, sTar, list)
-	startPos = spell.From.pos or myHero.pos
-	local isHero =  list[1].type == myHero.type
+	startPos = spell.From.pos or PurpleBallBitch.pos
+	local isHero =  list[1].type == PurpleBallBitch.type
 	--
 	local center = GetBestCircularCastPos(spell, sTar, list)
 	local endPos = startPos + (center - startPos):Normalized() * spell.Range
@@ -1421,46 +1271,56 @@ UpdateMovementHistory =
     end
 end
 
+UpdateDamage = function()
+    if cock() - Tard_RangeCount >  1 then
+        rlvl = PurpleBallBitch:GetSpellData(_R).level
+        qlvl = PurpleBallBitch:GetSpellData(_Q).level
+        finaldamage = rlvl == 0 and 0 or rlvl == 1 and 90 or rlvl == 2 and 135 or rlvl == 3 and 180
+        dmgQ = qlvl == 0 and 0 or qlvl == 1 and 50 or qlvl == 2 and 95 or qlvl == 3 and 140 or qlvl == 4 and 185 or qlvl == 5 and 230
+        Tard_RangeCount = cock()
+    end
+end
 
 Saga_Menu = 
 function()
-	Saga = MenuElement({type = MENU, id = "Viktor", name = "Saga's Viktor: The Fellow Engineer"})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.6.2"})
+	Saga = MenuElement({type = MENU, id = "Syndra", name = "Saga's Syndra: Big Purple Balls", icon = SagaIcon})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 3.1.1"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
 	Saga.Combo:MenuElement({id = "UseW", name = "W", value = true})
-    Saga.Combo:MenuElement({id = "UseE", name = "E", value = true})
+    Saga.Combo:MenuElement({id = "UseE", name = "QE", value = true})
+    Saga.Combo:MenuElement({id = "UseER", name = "E", value = true})
     Saga.Combo:MenuElement({id = "UseR", name = "R", value = true})
 	Saga.Combo:MenuElement({id = "comboActive", name = "Combo key", key = string.byte(" ")})
 
     Saga:MenuElement({id = "Harass", name = "Harass", type = MENU})
 	Saga.Harass:MenuElement({id = "UseQ", name = "Q", value = true})
-	Saga.Harass:MenuElement({id = "UseE", name = "E", value = true})
+	Saga.Harass:MenuElement({id = "UseW", name = "W", value = true})
 	Saga.Harass:MenuElement({id = "harassActive", name = "Harass Key", key = string.byte("C")})
 	
 	Saga:MenuElement({id = "Clear", name = "Clear", type = MENU})
 	Saga.Clear:MenuElement({id = "UseQ", name = "Q", value = true})
-	Saga.Clear:MenuElement({id = "UseE", name = "W", value = true})
+	Saga.Clear:MenuElement({id = "QCount", name = "Use Q on X minions", value = 3, min = 1, max = 4, step = 1})
+	Saga.Clear:MenuElement({id = "UseW", name = "W [Not Working]", value = true})
+	Saga.Clear:MenuElement({id = "WCount", name = "Use W on X minions [Not Working]", value = 3, min = 1, max = 4, step = 1})
 	Saga.Clear:MenuElement({id = "clearActive", name = "Clear key", key = string.byte("V")})
     
 
     Saga:MenuElement({id = "KillSteal", name = "KillSteal", type = MENU})
-    Saga.KillSteal:MenuElement({id = "qKS", name = "Q", value = true})
-    Saga.KillSteal:MenuElement({id = "eKS", name = "E", value = true})
     Saga.KillSteal:MenuElement({id = "rKS", name = "R KS on: ", value = false, type = MENU})
     
 
-    Saga:MenuElement({id = "Lasthit", name = "Lasthit", type = MENU})
+	Saga:MenuElement({id = "Lasthit", name = "Lasthit", type = MENU})
 	Saga.Lasthit:MenuElement({id = "UseQ", name = "Q", value = true})
     Saga.Lasthit:MenuElement({id = "lasthitActive", name = "Lasthit key", key = string.byte("X")})
-
-    Saga:MenuElement({id = "Misc", name = "R Settings", type = MENU})
-    Saga.Misc:MenuElement({id = "RCount", name = "Use R on X targets", value = 3, min = 1, max = 5, step = 1})
+    
+    Saga:MenuElement({id = "Auto", name = "AutoQ", type = MENU})
+    Saga.Auto:MenuElement({id = "useAutoQ", name = "Enable", key = string.byte("M"), toggle = true})
 
     Saga:MenuElement({id = "Rate", name = "Recache Rate", type = MENU})
 	Saga.Rate:MenuElement({id = "champion", name = "Value", value = 30, min = 1, max = 120, step = 1})
-
+    
     Saga:MenuElement({id = "Drawings", name = "Drawings", type = MENU})
     Saga.Drawings:MenuElement({id = "Q", name = "Draw Q range", type = MENU})
     Saga.Drawings.Q:MenuElement({id = "Enabled", name = "Enabled", value = true})       

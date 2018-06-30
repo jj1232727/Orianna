@@ -455,7 +455,15 @@ end
         TotalHeroes = GetEnemyHeroes()
         IDListNumber = GetHeroesWithBitches()
         Saga_Menu()
-        if Game.Timer() > Saga.Rate.champion:Value() then
+
+        if #_EnemyHeroes > 0 then
+            for i = 1, TotalHeroes do
+                local hero = _EnemyHeroes[i]
+            Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
+            end
+        end
+
+        if Game.Timer() > Saga.Rate.champion:Value() and #_EnemyHeroes == 0 then
         for i = 1, TotalHeroes do
             local hero = _EnemyHeroes[i]
         Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
@@ -485,11 +493,11 @@ LocalCallbackAdd(
     function()
             if Game.Timer() > Saga.Rate.champion:Value() and #_EnemyHeroes == 0 then
                 TotalHeroes = GetEnemyHeroes()
-                IDListNumber = GetHeroesWithBitches()
                 for i = 1, TotalHeroes do
                     local hero = _EnemyHeroes[i]
                 Saga.KillSteal.rKS:MenuElement({id = hero.charName, name = "Use R on: "..hero.charName, value = true})
                 end
+                IDListNumber = GetHeroesWithBitches()
 
             end
             if #_EnemyHeroes == 0 then return end
@@ -572,7 +580,7 @@ Combo = function()
 
                     local totalrDMG = CalcMagicalDamage(PurpleBallBitch, targetR, rDMG)
                     
-                    if totalrDMG > (targetR.health + targetR.shieldAD + targetR.shieldAP) and targetR.pos:DistanceTo() <= R.Range and Saga.KillSteal.rKS[targetR.charName]:Value() then
+                    if totalrDMG - 100 > (targetR.health + targetR.shieldAD + targetR.shieldAP) and targetR.pos:DistanceTo() <= R.Range and Saga.KillSteal.rKS[targetR.charName]:Value() then
                         CastSpell(HK_R, targetR)
                     end
                 end
@@ -1284,7 +1292,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Syndra", name = "Saga's Syndra: Big Purple Balls", icon = SagaIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 3.1.1"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 3.2.1"})
 	--Combo
     Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
