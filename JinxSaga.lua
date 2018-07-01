@@ -446,7 +446,7 @@ GetRecallingData = function(unit)
     for i = 0, unit.buffCount do
         local buff = unit:GetBuff(i)
         if buff and buff.name == 'recall' and buff.duration > 0 then
-            return true, SagaTimer() - buff.startTime
+            return true
         end
     end
     return false
@@ -1071,8 +1071,11 @@ end
     if target and Saga.Combo.UseW:Value() then
     local d = GetDistance(myHero.pos, target.pos)
     local aim = GetPred(target,math.huge,0.6 + Game.Latency()/1000)
-	if aim ~= nil and validTarget(target) and myHero.attackData.state ~= 2 then
-		if ItsReadyDumbAss(1) == 0 and  GetDistanceSqr(target) > finalrange * finalrange and aim:To2D().onScreen and (Game.Timer() - OnWaypoint(target).time < 0.15 or Game.Timer() - OnWaypoint(target).time > 1.0) then
+    if aim ~= nil and validTarget(target) and myHero.attackData.state ~= 2 then
+        if GetDistance(myHero, aim) > W.Range then
+            aim = myHero.pos + (aim- myHero.pos):Normalized() * W.Range
+        end
+		if ItsReadyDumbAss(1) == 0 and  GetDistanceSqr(target) > finalrange * finalrange and aim:To2D().onScreen and (Game.Timer() - OnWaypoint(target).time < 0.15 or Game.Timer() - OnWaypoint(target).time > 1.0) and minionCollision(target, jinx.pos, aim) == 0 then
             CastSpell(HK_W, aim, W.Range, W.Delay)
         end
     end
@@ -1131,6 +1134,9 @@ Harass = function()
     local aim = GetPred(target,math.huge,0.6 + Game.Latency()/1000)
 	if d > finalrange * finalrange and aim and validTarget(target) and myHero.attackData.state ~= 2 then
 		if manaManager(jinx) >= Saga.mana.manaH.Wmana:Value() and ItsReadyDumbAss(1) == 0 and aim:To2D().onScreen and minionCollision(target, jinx.pos, aim) == 0  then
+            if GetDistance(myHero, aim) > W.Range then
+                aim = myHero.pos + (aim- myHero.pos):Normalized() * W.Range
+            end
             CastSpell(HK_W, aim, W.Range, W.Delay * 1000)
         end
     end
@@ -1179,6 +1185,9 @@ LaneClear = function()
         local d = GetDistanceSqr(myHero.pos, target.pos)
         local aim = GetPred(target,math.huge,0.6 + Game.Latency()/1000)
         if d > finalrange * finalrange  and aim and validTarget(target) and myHero.attackData.state ~= 2 then
+            if GetDistance(myHero, aim) > W.Range then
+                aim = myHero.pos + (aim- myHero.pos):Normalized() * W.Range
+            end
             if (Game.Timer() - OnWaypoint(target).time < 0.15 or Game.Timer() - OnWaypoint(target).time > 1.0) and manaManager(jinx) >= Saga.mana.manaL.Wmana:Value() and ItsReadyDumbAss(1) == 0 and   aim:To2D().onScreen and minionCollision(target, jinx.pos, aim) == 0 then
                 CastSpell(HK_W, aim, W.Range, W.Delay*1000)
             end
@@ -1340,7 +1349,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Irelia", name = "Saga's Jinx: Lets See Pow Pow Thinks", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 2.9.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 3.0.0"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
