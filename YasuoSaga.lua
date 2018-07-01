@@ -1025,7 +1025,7 @@ LocalCallbackAdd("Tick", function()
         Harass()
     end
 
-    if GetOrbMode() == 'Clear' and Saga.Clear.UseQ:Value() then
+    if GetOrbMode() == 'Clear'  then
         LaneClear()
     end
 
@@ -1637,7 +1637,7 @@ LaneClear = function()
                 CastSpell(HK_Q, minion, Q1 * 1000)
             end
         end
-        if Game.CanUseSpell(2) == 0 and minion and Saga.Combo.UseE:Value() then
+        if Game.CanUseSpell(2) == 0 and minion and Saga.Clear.UseE:Value() then
             local EDmg =  CalcPhysicalDamage(myHero,minion, (myHero:GetSpellData(_E).level* 10 + 60) + (.20 * myHero.bonusDamage) + (.6 * myHero.ap))
             if EDmg > minion.health and GotBuff(minion, "YasuoDashWrapper") == 0 and not UnderTurret(DashEndPos(minion)) and  minion.pos:DistanceTo() < 475 then
                 Control.CastSpell(HK_E, minion)
@@ -1675,7 +1675,7 @@ Flee = function()
             for i = 1, SagaMCount() do 
                 local minion = SagasBitch(i)
                 if minion and unit and not minion.dead and minion.visible and minion.isTargetable then
-                    if GetDistance(minion.pos, unit) < 475  then
+                    if GotBuff(minion, "YasuoDashWrapper") == 0 and GetDistance(minion.pos, unit) < 475 and Game.CanUseSpell(2) == 0 then
                         Control.CastSpell(HK_E, minion.pos)
                     end
                 end
@@ -1688,7 +1688,7 @@ end
 Saga_Menu = 
 function()
 	Saga = MenuElement({type = MENU, id = "Yasuo", name = "Saga's Yasuo: Uindo Bitchi", icon = AIOIcon})
-	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.0.0"})
+	MenuElement({ id = "blank", type = SPACE ,name = "Version 1.0.1"})
 	--Combo
 	Saga:MenuElement({id = "Combo", name = "Combo", type = MENU})
     Saga.Combo:MenuElement({id = "UseQ", name = "Q", value = true})
