@@ -243,11 +243,17 @@ Latency = Game.Latency
 			local basedamage = ComboAA(target)
 			local qdmgg = 0
 			local rdmgg = 0
+			local edmgg = 0
 			local botrk = BOTRKdmg(target)
 			local passive = Passivedmg(target)
-			if Game.CanUseSpell(0) == 0 and Game.CanUseSpell(3) ~= 0 then 
+			if Game.CanUseSpell(0) == 0 then 
 				qdmgg = QDmg(target)
 			end
+
+			if Game.CanUseSpell(2) == 0 then 
+				edmgg = Edmg(target)
+			end
+
 			if Game.CanUseSpell(3) == 0 then 
 				rdmgg = Rdmg(target)
 			end
@@ -1023,7 +1029,6 @@ Flee = function()
 end
 
 LaneClear = function()
-	--if RepoZed.Clear.Key:Value() == false then return end
 	if myHero.mana < Saga.Clear.mana:Value() * 2 then return end
 	for i = 1, Game.MinionCount() do
 		local minion = Game.Minion(i)
@@ -1077,13 +1082,13 @@ LaneClear = function()
 end
 
 LastHit = function()
-	--if RepoZed.Clear.Key:Value() == false then return end
+
 	if myHero.mana < Saga.Clear.mana:Value() * 2 then return end
 	for i = 1, Game.MinionCount() do
 		local minion = Game.Minion(i)
 		if minion then
 			if minion.isEnemy and minion.isTargetable and minion.visible and not minion.dead then
-				if  Saga.Lasthit.UseQ:Value() and Game.CanUseSpell(0) == 0 and QDmg(minion) > minion.health then -- QDMG
+				if  Saga.Lasthit.UseQ:Value() and Game.CanUseSpell(0) == 0 and QDmg(minion) > minion.health then 
 					CastSpell(HK_Q, minion, Q.Range, 250)
 				end
 			end
